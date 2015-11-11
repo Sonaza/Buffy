@@ -1,0 +1,289 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+	
+	<Font name="BuffyFont" font="Interface/AddOns/Buffy/Media/DORISPP.TTF" outline="NORMAL" virtual="true">
+		<Shadow>
+			<Offset>
+				<AbsDimension x="0" y="-1"/>
+			</Offset>
+			<Color r="0" g="0" b="0" a="0.9"/>
+		</Shadow>
+		<FontHeight>
+			<AbsValue val="10"/>
+		</FontHeight>
+	</Font>
+	
+	<Font name="BuffyFontBig" font="Interface/AddOns/Buffy/Media/DORISPP.TTF" outline="NORMAL" virtual="true">
+		<Shadow>
+			<Offset>
+				<AbsDimension x="0" y="-1"/>
+			</Offset>
+			<Color r="0" g="0" b="0" a="0.9"/>
+		</Shadow>
+		<FontHeight>
+			<AbsValue val="16"/>
+		</FontHeight>
+	</Font>
+	
+	<Button name="BuffyIconFrameTemplate" virtual="true">
+		<Size x="42" y="42"/>
+		<Animations>
+			<AnimationGroup parentKey="pulse" looping="REPEAT">
+				<Scale scaleX="1.1" scaleY="1.1" duration="0.6" order="1" smoothing="IN_OUT"/>
+				<Scale scaleX="0.91" scaleY="0.91" duration="0.6" order="2" smoothing="OUT_IN"/>
+			</AnimationGroup>
+		</Animations>
+		<Layers>
+			<Layer level="ARTWORK">
+				<Texture name="$parentTexture" parentKey="texture">
+					<Size x="42" y="42"/>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT" x="0" y="0"/>
+					</Anchors>
+					<TexCoords left="0.055" right="0.945" top="0.055" bottom="0.945"/>
+				</Texture>
+				<Texture name="$parentGloss" file="Interface\AddOns\Buffy\Media\Gloss" alphaMode="ADD">
+					<Size x="54" y="54"/>
+					<Anchors>
+						<Anchor point="CENTER" relativePoint="CENTER" relativeKey="$parent.texture" x="0" y="0"/>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="0.65"/>
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK" textureSubLevel="1">
+				<Texture name="$parentBorder" parentKey="iconBorder" file="Interface\AddOns\Buffy\Media\Border">
+					<Size x="62" y="62"/>
+					<Anchors>
+						<Anchor point="CENTER" relativePoint="CENTER" relativeKey="$parent.texture"/>
+					</Anchors>
+					<Color r="0" g="0" b="0"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnShow>
+				self.pulse:Play();
+			</OnShow>
+			<OnEnter function="BuffyIconFrame_OnEnter"/>
+			<OnLeave function="BuffyIconFrame_OnLeave"/>
+		</Scripts>
+	</Button>
+	
+	<Button name="BuffyFrame" frameStrata="LOW" parent="UIParent" hidden="true" movable="true">
+		<Size x="220" y="60"/>
+		<Anchors>
+			<Anchor point="LEFT" relativePoint="CENTER" x="-22" y="200"/>
+		</Anchors>
+		<Animations>
+			<AnimationGroup parentKey="fadein" setToFinalAlpha="true">
+				<Alpha fromAlpha="0.0" toAlpha="1.0" duration="0.3" order="1" smoothing="IN_OUT"/>
+				<Scripts>
+					<OnPlay function="BuffyFrame_OnFadeInPlay"/>
+				</Scripts>
+			</AnimationGroup>
+			<AnimationGroup parentKey="fadeinex" setToFinalAlpha="true">
+				<Alpha fromAlpha="0.0" toAlpha="1.0" duration="0.5" order="1" smoothing="IN_OUT"/>
+				<Scripts>
+					<OnPlay function="BuffyFrame_OnFadeInPlay"/>
+				</Scripts>
+			</AnimationGroup>
+			<AnimationGroup parentKey="fadeout" setToFinalAlpha="true">
+				<Alpha fromAlpha="1.0" toAlpha="0.0" duration="0.5" order="1" smoothing="IN_OUT"/>
+				<Scripts>
+					<OnFinished function="BuffyFrame_OnFadeOutFinished"/>
+				</Scripts>
+			</AnimationGroup>
+			<AnimationGroup parentKey="movefadein" setToFinalAlpha="true">
+				<Alpha fromAlpha="1.0" toAlpha="0.33" duration="0.4" order="1" smoothing="IN_OUT"/>
+			</AnimationGroup>
+			<AnimationGroup parentKey="movefadeout" setToFinalAlpha="true">
+				<Alpha fromAlpha="0.33" toAlpha="1.0" duration="0.4" order="1" smoothing="IN_OUT"/>
+			</AnimationGroup>
+		</Animations>
+		<Layers>
+			<Layer level="ARTWORK">
+				<FontString parentKey="title" inherits="BuffyFont" justifyH="LEFT">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="56" y="-12"/>
+					</Anchors>
+				</FontString>
+				<FontString parentKey="description" inherits="BuffyFont" justifyH="LEFT" hidden="true">
+					<Anchors>
+						<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parent" x="56" y="12"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentIcon" parentKey="icon" inherits="BuffyIconFrameTemplate">
+				<Anchors>
+					<Anchor point="LEFT" x="1" y="0"/>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						self:RegisterForClicks("RightButtonUp");
+					</OnLoad>
+					<OnClick function="BuffyFrame_OnClick"/>
+				</Scripts>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				self:RegisterForClicks("RightButtonUp");
+			</OnLoad>
+			<OnShow function="BuffyFrame_OnShow"/>
+			<OnClick function="BuffyFrame_OnClick"/>
+			<OnMouseDown function="BuffyFrame_OnMouseDown"/>
+			<OnMouseUp function="BuffyFrame_OnMouseUp"/>
+		</Scripts>
+	</Button>
+	
+	<Frame name="BuffySwitchAnimationFrame" parent="UIParent" frameStrata="LOW" hidden="true">
+		<Size x="220" y="60"/>
+		<Anchors>
+			<Anchor point="LEFT" relativePoint="CENTER" x="-22" y="200"/>
+		</Anchors>
+		<Animations>
+			<AnimationGroup parentKey="fadeout" setToFinalAlpha="true">
+				<Alpha fromAlpha="1.0" toAlpha="0.0" duration="0.44" order="1" smoothing="IN_OUT"/>
+				<Translation duration="0.44" order="1" offsetX="0" offsetY="6" smoothing="IN_OUT"/>
+				<Scripts>
+					<OnPlay>
+						self:GetParent().icon.pulse:Stop();
+					</OnPlay>
+					<OnFinished>
+						self:GetParent():Hide();
+					</OnFinished>
+				</Scripts>
+			</AnimationGroup>
+		</Animations>
+		<Frames>
+			<Button name="$parentIcon" parentKey="icon" inherits="BuffyIconFrameTemplate">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent" x="1" y="0"/>
+				</Anchors>
+			</Button>
+			<Frame name="$parentText" parentKey="text">
+				<Size x="220" y="60"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<FontString parentKey="title" inherits="BuffyFont" justifyH="LEFT">
+							<Anchors>
+								<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="56" y="-12"/>
+							</Anchors>
+						</FontString>
+						<FontString parentKey="description" inherits="BuffyFont" justifyH="LEFT">
+							<Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parent" x="56" y="12"/>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				self:SetPoint("LEFT", BuffyFrame, "LEFT", 0, 0);
+				self:SetFrameLevel(BuffyFrame:GetFrameLevel()+2);
+				self:EnableMouse(false);
+			</OnLoad>
+		</Scripts>
+	</Frame>
+	
+	<Button name="BuffySpellButtonFrame" hidden="true" inherits="SecureActionButtonTemplate">
+		<Scripts>
+			<PostClick function="BuffySpellButtonFrame_OnClick"/>
+		</Scripts>
+	</Button>
+	
+	<Frame name="BuffyKeybindingFrameOuter" frameStrata="FULLSCREEN_DIALOG" parent="UIParent" hidden="true" clamp="true">
+		<Anchors>
+			<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+			<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="0" y="0"/>
+		</Anchors>
+		<!-- <Layers>
+			<Layer level="BACKGROUND">
+				<Texture setAllPoints="true">
+					<Color r="0" g="0" b="0" a="0.2"/>
+				</Texture>
+			</Layer>
+		</Layers> -->
+		<Frames>
+			<Frame name="BuffyKeybindingFrame" parentKey="$">
+				<Size x="340" y="190"/>
+				<Anchors>
+					<Anchor point="CENTER" x="0" y="0"/>
+				</Anchors>
+				<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\AddOns\Buffy\Media\FrameBorder" tile="true">
+					<EdgeSize>
+						<AbsValue val="16"/>
+					</EdgeSize>
+					<TileSize>
+						<AbsValue val="16"/>
+					</TileSize>
+					<BackgroundInsets>
+						<AbsInset left="4" right="4" top="4" bottom="4"/>
+					</BackgroundInsets>
+				</Backdrop>
+				<Layers>
+					<Layer level="ARTWORK">
+						<FontString parentKey="title" inherits="BuffyFontBig" justifyH="CENTER" text="BUFFY_SET_BINDING_TEXT">
+							<Anchors>
+								<Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="0" y="-23"/>
+							</Anchors>
+						</FontString>
+						<FontString parentKey="currentBinding" inherits="BuffyFontBig" justifyH="CENTER" text="BUFFY_CHOOSE_BINDING_TEXT">
+							<Anchors>
+								<Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="0" y="-51"/>
+							</Anchors>
+						</FontString>
+						<FontString parentKey="temporaryBind" inherits="BuffyFont" justifyH="CENTER" text="BUFFY_TEMPORARY_BIND_TEXT">
+							<Size x="280"/>
+							<Anchors>
+								<Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="0" y="-80"/>
+							</Anchors>
+						</FontString>
+						<FontString parentKey="cancel" inherits="BuffyFont" justifyH="CENTER" text="BUFFY_CANCEL_BINDING_TEXT">
+							<Anchors>
+								<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$parent" x="0" y="52"/>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Frames>
+					<Button name="$parentAcceptButton" inherits="UIPanelButtonTemplate" text="BUFFY_ACCEPT_TEXT">
+						<Size x="120" y="26"/>
+						<Anchors>
+							<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$parent" x="0" y="18"/>
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								BuffyKeybindingFrameAcceptButton_OnClick();
+							</OnClick>
+						</Scripts>
+					</Button>
+				</Frames>
+				<Scripts>
+					<OnLoad>
+						self:SetBackdropBorderColor(0, 0, 0, 0.95);
+						self:SetBackdropColor(0, 0, 0, 0.6);
+					</OnLoad>
+				</Scripts>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				self:EnableMouseWheel(true);
+				self:EnableMouse(true);
+			</OnLoad>
+			<OnShow function="BuffyKeybindingFrame_OnShow"/>
+			<OnKeyDown function="BuffyKeybindingFrame_OnKeydown"/>
+			<OnMouseWheel function="BuffyKeybindingFrame_OnMouseWheel"/>
+			<OnMouseDown function="BuffyKeybindingFrame_OnMouseDown"/>
+		</Scripts>
+	</Frame>
+
+</Ui>
