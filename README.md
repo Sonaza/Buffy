@@ -8,3 +8,6 @@ Buffy comes to your aid and you'll never forget to buff again! Buffy tells you w
 
 ## Dependencies
 Buffy uses Ace3 and LibDataBroker which are included in the /libs directory.
+
+## External links
+* [Download available on Curse](http://www.curse.com/addons/wow/buffy)
