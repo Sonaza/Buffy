@@ -141,6 +141,7 @@ function A:InitializeDatabase()
 					OnlyEnableSolo = true,
 					OnlyEnableOutside = true,
 					ExpiryOverride = true,
+					EnableGrimoireSacrificeAlert = true,
 				},
 				Shaman = {
 					RemindShield = true,
@@ -276,6 +277,12 @@ function A:GetClassOptions()
 			menuList = {
 				{
 					text = "Warlock Options", isTitle = true, notCheckable = true,
+				},
+				{
+					text = "Enable alert for Grimoire of Sacrifice",
+					func = function() A.db.global.Class.Warlock.EnableGrimoireSacrificeAlert = not A.db.global.Class.Warlock.EnableGrimoireSacrificeAlert; A:UpdateBuffs(); end,
+					checked = function() return A.db.global.Class.Warlock.EnableGrimoireSacrificeAlert; end,
+					isNotRadio = true,
 				},
 				{
 					text = "Enable alert for Soulstone",

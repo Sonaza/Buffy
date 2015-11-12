@@ -198,6 +198,7 @@ AddBuffSpell(15473,		BUFF_SPECIAL, "PRIEST_SHADOWFORM");
 AddBuffSpell(25780,		BUFF_SPECIAL, "PALADIN_RIGHTEOUS_FURY");
 
 AddBuffSpell(20707,		BUFF_SPECIAL, "WARLOCK_SOULSTONE");
+AddBuffSpell(108503,	BUFF_SPECIAL, "WARLOCK_GRIMOIRE_OF_SACRIFICE");
 
 AddBuffSpell(48263,		BUFF_SPECIAL, "DEATHKNIGHT_BLOOD_PRESENCE");
 AddBuffSpell(48266,		BUFF_SPECIAL, "DEATHKNIGHT_FROST_PRESENCE");
@@ -582,6 +583,23 @@ local CLASS_CASTABLE_BUFFS = {
 					return false;
 				end,
 			},
+			{
+				hasTalent = {5, 3},
+				selfbuff = 	{ BUFFS.WARLOCK_GRIMOIRE_OF_SACRIFICE, },
+				condition = function()
+					-- This talet location has something else for demonology
+					if(GetSpecialization() == 2) then return false end
+					
+					return A.db.global.Class.Warlock.EnableGrimoireSacrificeAlert;
+				end,
+				description = function()
+					if(UnitName("pet") == nil) then
+						return "Summon a demon to sacrifice";
+					end
+					
+					return "Sacrifice your demon";
+				end,
+			},
 		},
 		all	= {
 			{
@@ -936,6 +954,11 @@ function A:OnEnable()
 	A:RegisterEvent("COMPANION_UPDATE");
 	A:RegisterEvent("READY_CHECK");
 	
+	local _, PLAYER_CLASS = UnitClass("player");
+	if(PLAYER_CLASS == "WARLOCK") then
+		A:RegisterEvent("UNIT_PET");
+	end
+	
 	A:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
 	
 	A:RegisterEvent("PLAYER_STARTED_MOVING");
@@ -1020,6 +1043,10 @@ function A:ZONE_CHANGED()
 end
 
 function A:UNIT_AURA()
+	A:UpdateBuffs();
+end
+
+function A:UNIT_PET()
 	A:UpdateBuffs();
 end
 
