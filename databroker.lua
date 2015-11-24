@@ -86,6 +86,8 @@ function A:InitializeDatabase()
 			ShowTooltips = true,
 			AlertMoveFade = true,
 			
+			PepeReminderEnabled = false,
+			
 			Position = {
 				DefaultPosition = true,
 				x = nil,
@@ -712,6 +714,15 @@ function A:GetDatabrokerMenuData()
 					text = "Show while flying or in a vehicle",
 					func = function() self.db.global.ShowWhileMounted = not self.db.global.ShowWhileMounted; A:UpdateBuffs(); end,
 					checked = function() return self.db.global.ShowWhileMounted; end,
+					isNotRadio = true,
+				},
+				{
+					text = " ", isTitle = true, notCheckable = true,
+				},
+				{
+					text = "Remind to use Trans-Dimensional Bird Whistle",
+					func = function() self.db.global.PepeReminderEnabled = not self.db.global.PepeReminderEnabled; A:UpdateBuffs(); end,
+					checked = function() return self.db.global.PepeReminderEnabled; end,
 					isNotRadio = true,
 				},
 			},

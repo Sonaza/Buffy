@@ -214,6 +214,9 @@ AddBuffSpell(2457,		BUFF_SPECIAL, "WARRIOR_BATTLE_STANCE");
 AddBuffSpell(156291,	BUFF_SPECIAL, "WARRIOR_GLADIATOR_STANCE");
 AddBuffSpell(71,		BUFF_SPECIAL, "WARRIOR_DEFENSIVE_STANCE");
 
+AddBuffSpell(181943,	BUFF_SPECIAL, "PEPE");
+local PEPE_TOY_ITEM_ID = 122293;
+
 local function CanPoisonWeapons()
 	local mainhand = GetInventoryItemLink("player", 16);
 	local mhSlot = mainhand and select(9, GetItemInfo(mainhand)) or "";
@@ -232,6 +235,23 @@ local function GetGCD()
 	end
 	
 	return 0;
+end
+
+local function ltinsert(table, list)
+	if(not table or type(table) ~= "table") then return false end
+	if(not list or type(list) ~= "table") then return false end
+	
+	for key, value in ipairs(list) do
+		table[key] = value;
+	end
+end
+
+local function tmerge(table, other)
+	for key, value in ipairs(other) do
+		tinsert(table, value);
+	end
+	
+	return table;
 end
 
 function A:IsSpellReady(spellID)
@@ -253,6 +273,28 @@ end
 -- [x] = Override to previous on per spec basis where x is spec number
 
 local CLASS_CASTABLE_BUFFS = {
+	-- Special category, everything here is added to the "all" category of other classes
+	["ALL"] = {
+		{
+			selfbuff = { BUFFS.PEPE },
+			skipBuffCheck = true,
+			condition = function()
+				if(not A.db.global.PepeReminderEnabled or InCombatLockdown()) then return false end
+				if(not PlayerHasToy(PEPE_TOY_ITEM_ID)) then return false end
+				
+				local hasBuff = A:UnitHasBuff("player", BUFFS.PEPE);
+				if(hasBuff) then return false end
+				
+				local start, duration, enable = GetItemCooldown(PEPE_TOY_ITEM_ID);
+				return start == 0 and duration == 0;
+			end,
+			description = "You've not got a friend! :(",
+			info = {
+				type = "toy",
+				id = PEPE_TOY_ITEM_ID,
+			},
+		},
+	},
 	["WARRIOR"]	= {
 		all	= {
 			{
@@ -652,6 +694,30 @@ local CLASS_CASTABLE_BUFFS = {
 	},
 };
 
+function A:GetClassCastableBuffs(class, spec)
+	local merged = {};
+	
+	if(CLASS_CASTABLE_BUFFS[class].all) then
+		tmerge(merged, CLASS_CASTABLE_BUFFS[class].all);
+	end
+	
+	if(CLASS_CASTABLE_BUFFS[class].special) then
+		tmerge(merged, CLASS_CASTABLE_BUFFS[class].special);
+	end
+	
+	if(spec and CLASS_CASTABLE_BUFFS[class][spec]) then
+		tmerge(merged, CLASS_CASTABLE_BUFFS[class][spec]);
+	elseif(CLASS_CASTABLE_BUFFS[class][0]) then
+		tmerge(merged, CLASS_CASTABLE_BUFFS[class][0]);
+	end
+	
+	if(CLASS_CASTABLE_BUFFS["ALL"]) then
+		tmerge(merged, CLASS_CASTABLE_BUFFS["ALL"]);
+	end
+	
+	return merged;
+end
+
 ----------------------------------------------------------
 
 local CONSUMABLE_FLASK	= 0x01;
@@ -798,23 +864,6 @@ local CLASS_STAT_PREFS = {
 		[0] = { E.STAT.AGILITY },
 	},
 };
-
-local function ltinsert(table, list)
-	if(not table or type(table) ~= "table") then return false end
-	if(not list or type(list) ~= "table") then return false end
-	
-	for key, value in ipairs(list) do
-		table[key] = value;
-	end
-end
-
-local function tmerge(table, other)
-	for _, item in ipairs(other) do
-		tinsert(table, item);
-	end
-	
-	return table;
-end
 
 function A:GetStatPreference(class, spec_index)
 	if(not class or not spec_index) then return -1; end
@@ -1710,7 +1759,7 @@ end
 
 function A:GetPlayerDistanceToPoint(pinstance, px, py)
 	local x, y, _, instance = UnitPosition("player");
-    return instance == pinstance and (((px - x) ^ 2 + (py - y) ^ 2) ^ 0.5) / 1.098;
+	return instance == pinstance and (((px - x) ^ 2 + (py - y) ^ 2) ^ 0.5) / 1.098;
 end
 
 function A:IsFeastUp()
@@ -1719,26 +1768,6 @@ function A:IsFeastUp()
 	end
 	
 	return false;
-end
-
-function A:GetClassCastableBuffs(class, spec)
-	local merged = {};
-	
-	if(CLASS_CASTABLE_BUFFS[class].all) then
-		tmerge(merged, CLASS_CASTABLE_BUFFS[class].all);
-	end
-	
-	if(CLASS_CASTABLE_BUFFS[class].special) then
-		tmerge(merged, CLASS_CASTABLE_BUFFS[class].special);
-	end
-	
-	if(spec and CLASS_CASTABLE_BUFFS[class][spec]) then
-		tmerge(merged, CLASS_CASTABLE_BUFFS[class][spec]);
-	elseif(CLASS_CASTABLE_BUFFS[class][0]) then
-		tmerge(merged, CLASS_CASTABLE_BUFFS[class][0]);
-	end
-	
-	return merged;
 end
 
 function A:IsSpellAura(spell)
@@ -1816,6 +1845,7 @@ function A:UpdateBuffs(forceUpdate)
 				local playerBuffCategory = 0;
 				local playerBuffExists = false;
 				local playerBuffExpiring = false;
+				local playerBuffIsAura = false;
 				
 				local someoneHasAuraOnly = false;
 				local numUnitsHasAura = 0;
@@ -1828,6 +1858,7 @@ function A:UpdateBuffs(forceUpdate)
 							
 							playerBuffExpiring = buffState.expiring;
 							someoneHasAuraOnly = buffState.isAura;
+							playerBuffIsAura = buffState.isAura;
 							
 							break;
 						elseif(buffState.state == E.BUFF_STATE.HAS_BUFF) then
@@ -1847,7 +1878,7 @@ function A:UpdateBuffs(forceUpdate)
 				
 				if(playerBuffExists) then
 					for unit, buffState in pairs(buffStates[playerBuffCategory]) do
-						if(buffState.state ~= E.BUFF_STATE.HAS_BUFF_BY_PLAYER) then
+						if((not playerBuffIsAura and buffState.state ~= E.BUFF_STATE.HAS_BUFF_BY_PLAYER) or (playerBuffIsAura and buffState.state == E.BUFF_STATE.NO_BUFF)) then
 							everybodyHasBuff = false;
 							buffCategory = playerBuffCategory;
 							infoUnits[unit] = unit;
@@ -1858,7 +1889,7 @@ function A:UpdateBuffs(forceUpdate)
 						for category, unitBuffs in pairs(buffStates) do
 							if(category ~= buffCategory) then
 								for unit, buffState in pairs(unitBuffs) do
-									if(buffState.state == E.BUFF_STATE.HAS_BUFF_BY_PLAYER) then
+									if((not playerBuffIsAura and buffState.state == E.BUFF_STATE.HAS_BUFF_BY_PLAYER) or (playerBuffIsAura and (buffState.state == E.BUFF_STATE.HAS_BUFF or buffState.state == E.BUFF_STATE.HAS_BUFF_BY_PLAYER))) then
 										infoUnits[unit] = nil;
 									end
 								end
@@ -1940,10 +1971,24 @@ function A:UpdateBuffs(forceUpdate)
 					local shouldAlert, buffSpell = data.selfbuff();
 					
 					if(data.skipBuffCheck or shouldAlert and IsSpellKnown(buffSpell)) then
-						A:ShowBuffyAlert(ALERT_TYPE_SPELL, buffSpell, {
+						local alertType = ALERT_TYPE_SPELL;
+						local alertID = buffSpell;
+						
+						if(data.info) then
+							if(data.info.type == "item" or data.info.type == "toy") then
+								alertType = ALERT_TYPE_ITEM;
+							elseif(data.info.type == "spell") then
+								alertType = ALERT_TYPE_SPELL;
+							end
+							
+							alertID = data.info.id;
+						end
+							
+						A:ShowBuffyAlert(alertType, alertID, {
 							primary = data.primary,
 							secondary = data.secondary,
 							description = data.description,
+							info = data.info,
 						});
 						return;
 					end
@@ -1955,6 +2000,7 @@ function A:UpdateBuffs(forceUpdate)
 							primary = data.primary,
 							secondary = data.secondary,
 							description = data.description,
+							info = data.info,
 							expiring = buffExpiring,
 							remaining = A:GetBuffRemaining("player", buffSpell),
 						});
@@ -2240,7 +2286,21 @@ function A:ShowBuffyAlert(alert_type, id, data)
 	local _;
 	local name, icon;
 	
-	if(alert_type == ALERT_TYPE_SPELL) then
+	if(data.info and not data.noCast) then
+		name, _, _, _, _, _, _, _, _, icon = GetItemInfo(data.info.id);
+		BuffyFrame.icon.texture:SetTexture(icon);
+		
+		BuffyFrame.Tooltip = {
+			type = ALERT_TYPE_ITEM,
+			id = data.info.id,
+		};
+		
+		if(not InCombatLockdown() and not data.noCast) then
+			A:SetTempBind(data.info.type, data.info.id);
+		end
+		
+		BuffyFrame.title:SetFormattedText("|cfff1da54%s|r|n%s", data.primary or "Use", data.secondary or name or "<Error>");
+	elseif(alert_type == ALERT_TYPE_SPELL) then
 		local realSpellID = A:GetRealSpellID(id);
 		name, _, icon = GetSpellInfo(realSpellID);
 		BuffyFrame.icon.texture:SetTexture(icon);
@@ -2516,7 +2576,11 @@ function A:SetTempBind(bindType, name)
 	local key = A:GetBinding();
 	if(key) then
 		BuffySpellButtonFrame:SetAttribute("type1", bindType);
-		BuffySpellButtonFrame:SetAttribute(bindType .. "1", name);
+		
+		if(bindType == "item" or bindType == "spell" or bindType == "toy") then
+			BuffySpellButtonFrame:SetAttribute(bindType .. "1", name);
+		end
+		
 		BuffySpellButtonFrame:SetAttribute("unit", "player");
 		
 		SetOverrideBindingClick(BuffyFrame, true, key, "BuffySpellButtonFrame", "LeftButton");
