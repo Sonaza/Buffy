@@ -273,28 +273,6 @@ end
 -- [x] = Override to previous on per spec basis where x is spec number
 
 local CLASS_CASTABLE_BUFFS = {
-	-- Special category, everything here is added to the "all" category of other classes
-	["ALL"] = {
-		{
-			selfbuff = { BUFFS.PEPE },
-			skipBuffCheck = true,
-			condition = function()
-				if(not A.db.global.PepeReminderEnabled or InCombatLockdown()) then return false end
-				if(not PlayerHasToy(PEPE_TOY_ITEM_ID)) then return false end
-				
-				local hasBuff = A:UnitHasBuff("player", BUFFS.PEPE);
-				if(hasBuff) then return false end
-				
-				local start, duration, enable = GetItemCooldown(PEPE_TOY_ITEM_ID);
-				return start == 0 and duration == 0;
-			end,
-			description = "You've not got a friend! :(",
-			info = {
-				type = "toy",
-				id = PEPE_TOY_ITEM_ID,
-			},
-		},
-	},
 	["WARRIOR"]	= {
 		all	= {
 			{
@@ -717,6 +695,29 @@ function A:GetClassCastableBuffs(class, spec)
 	
 	return merged;
 end
+
+-- Miscellaneous category, low priority selfbuffs or other stuff
+local MISC_CASTABLE_BUFFS = {
+	{
+		selfbuff = { BUFFS.PEPE },
+		skipBuffCheck = true,
+		condition = function()
+			if(not A.db.global.PepeReminderEnabled or InCombatLockdown()) then return false end
+			if(not PlayerHasToy(PEPE_TOY_ITEM_ID)) then return false end
+			
+			local hasBuff = A:UnitHasBuff("player", BUFFS.PEPE);
+			if(hasBuff) then return false end
+			
+			local start, duration, enable = GetItemCooldown(PEPE_TOY_ITEM_ID);
+			return start == 0 and duration == 0;
+		end,
+		description = "You've not got a friend! :(",
+		info = {
+			type = "toy",
+			id = PEPE_TOY_ITEM_ID,
+		},
+	},
+}
 
 ----------------------------------------------------------
 
@@ -2204,6 +2205,69 @@ function A:UpdateBuffs(forceUpdate)
 					description = string.format("Well Fed in |cfff1da54%d|r seconds", 10 - timeEaten),
 				});
 				return;
+			end
+		end
+	end
+	
+	--------------------------------------------------
+	-- Miscellaneous low priority selfbuffs
+	
+	for _, data in ipairs(MISC_CASTABLE_BUFFS) do
+		local valid = true;
+		
+		if(data.hasTalent) then
+			valid = valid and A:PlayerHasTalent(data.hasTalent[1], data.hasTalent[2]);
+		end
+		
+		if(data.noTalent) then
+			valid = valid and not A:PlayerHasTalent(data.noTalent[1], data.noTalent[2]);
+		end
+		
+		if(data.condition and type(data.condition) == "function") then
+			valid = valid and data.condition();
+		end
+		
+		if(valid and data.selfbuff and not UnitIsDeadOrGhost("player")) then
+			if(type(data.selfbuff) == "function") then
+				local shouldAlert, buffSpell = data.selfbuff();
+				
+				if(data.skipBuffCheck or shouldAlert and IsSpellKnown(buffSpell)) then
+					local alertType = ALERT_TYPE_SPELL;
+					local alertID = buffSpell;
+					
+					if(data.info) then
+						if(data.info.type == "item" or data.info.type == "toy") then
+							alertType = ALERT_TYPE_ITEM;
+						elseif(data.info.type == "spell") then
+							alertType = ALERT_TYPE_SPELL;
+						end
+						
+						alertID = data.info.id;
+					end
+						
+					A:ShowBuffyAlert(alertType, alertID, {
+						primary = data.primary,
+						secondary = data.secondary,
+						description = data.description,
+						info = data.info,
+					});
+					return;
+				end
+			else
+				local hasBuff, buffSpell, buffExpiring = A:UnitHasSomeBuff("player", data.selfbuff);
+				
+				if(data.skipBuffCheck or (not hasBuff or (buffExpiring and canShowExpiration)) and IsSpellKnown(buffSpell)) then
+					A:ShowBuffyAlert(ALERT_TYPE_SPELL, buffSpell, {
+						primary = data.primary,
+						secondary = data.secondary,
+						description = data.description,
+						info = data.info,
+						expiring = buffExpiring,
+						remaining = A:GetBuffRemaining("player", buffSpell),
+					});
+					
+					return;
+				end
 			end
 		end
 	end
