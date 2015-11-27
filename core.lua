@@ -711,7 +711,17 @@ local MISC_CASTABLE_BUFFS = {
 			local start, duration, enable = GetItemCooldown(PEPE_TOY_ITEM_ID);
 			return start == 0 and duration == 0;
 		end,
-		description = "You've not got a friend! :(",
+		description = function()
+			local quotes = {
+				"You've not got a friend! :(",
+				"Put a birb on it!",
+				"It's dangerous to go alone!",
+				"Pepe is love, Pepe is life",
+				"It's a rough neighborhood",
+				"Pepe for Warchief!",
+			};
+			return quotes[math.floor(GetTime() / 120) % (#quotes) + 1];
+		end,
 		info = {
 			type = "toy",
 			id = PEPE_TOY_ITEM_ID,
