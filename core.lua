@@ -1050,10 +1050,10 @@ function A:OnEnable()
 end
 
 function A:PLAYER_STARTED_MOVING()
-	if(A.PlayerIsMoving) then return end
-	
-	A.PlayerIsMoving = true;
 	A.PlayerStoppedMoving = false;
+	
+	if(A.PlayerIsMoving) then return end
+	A.PlayerIsMoving = true;
 	
 	if(BuffyFrame:IsVisible()) then
 		if(self.db.global.AlertMoveFade) then
@@ -1072,6 +1072,7 @@ function A:PLAYER_STARTED_MOVING()
 		
 		if(self.db.global.UnbindWhenMoving) then
 			A:ClearTempBind();
+			-- print("Clearing");
 		end
 	end
 end
@@ -1100,6 +1101,7 @@ function A:PLAYER_STOPPED_MOVING_FINISH()
 		
 		if(self.db.global.UnbindWhenMoving) then
 			A:RestoreLastTempBind();
+			-- print("Restoring");
 		end
 	end
 end
