@@ -1072,7 +1072,6 @@ function A:PLAYER_STARTED_MOVING()
 		
 		if(self.db.global.UnbindWhenMoving) then
 			A:ClearTempBind();
-			-- print("Clearing");
 		end
 	end
 end
@@ -1101,7 +1100,6 @@ function A:PLAYER_STOPPED_MOVING_FINISH()
 		
 		if(self.db.global.UnbindWhenMoving) then
 			A:RestoreLastTempBind();
-			-- print("Restoring");
 		end
 	end
 end
