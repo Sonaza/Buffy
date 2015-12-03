@@ -84,7 +84,9 @@ function A:InitializeDatabase()
 			OverrideAuras = true,
 			
 			ShowTooltips = true,
+			
 			AlertMoveFade = true,
+			UnbindWhenMoving = false,
 			
 			PepeReminderEnabled = false,
 			
@@ -720,6 +722,21 @@ function A:GetDatabrokerMenuData()
 					text = " ", isTitle = true, notCheckable = true,
 				},
 				{
+					text = "Fade alert when moving",
+					func = function() self.db.global.AlertMoveFade = not self.db.global.AlertMoveFade; end,
+					checked = function() return self.db.global.AlertMoveFade; end,
+					isNotRadio = true,
+				},
+				{
+					text = "Unbind the temporary keybind when moving",
+					func = function() self.db.global.UnbindWhenMoving = not self.db.global.UnbindWhenMoving; end,
+					checked = function() return self.db.global.UnbindWhenMoving; end,
+					isNotRadio = true,
+				},
+				{
+					text = " ", isTitle = true, notCheckable = true,
+				},
+				{
 					text = "Remind to use Trans-Dimensional Bird Whistle",
 					func = function() self.db.global.PepeReminderEnabled = not self.db.global.PepeReminderEnabled; A:UpdateBuffs(); end,
 					checked = function() return self.db.global.PepeReminderEnabled; end,
@@ -943,12 +960,6 @@ function A:GetDatabrokerMenuData()
 			text = "Display tooltip on icon hover",
 			func = function() self.db.global.ShowTooltips = not self.db.global.ShowTooltips; end,
 			checked = function() return self.db.global.ShowTooltips; end,
-			isNotRadio = true,
-		},
-		{
-			text = "Fade alert when moving",
-			func = function() self.db.global.AlertMoveFade = not self.db.global.AlertMoveFade; end,
-			checked = function() return self.db.global.AlertMoveFade; end,
 			isNotRadio = true,
 		},
 		{

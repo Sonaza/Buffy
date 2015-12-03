@@ -1038,41 +1038,70 @@ function A:OnEnable()
 			A:UpdateBuffs();
 			self.elapsed = 0;
 		end
+		
+		if(not IsFalling() and (A.PlayerStoppedMoving or self.fallFlagged) and A.PlayerIsMoving) then
+			A:PLAYER_STOPPED_MOVING_FINISH();
+			self.fallFlagged = false;
+		elseif(IsFalling() and not A.PlayerIsMoving) then
+			A:PLAYER_STARTED_MOVING();
+			self.fallFlagged = true;
+		end
 	end);
 end
 
 function A:PLAYER_STARTED_MOVING()
+	if(A.PlayerIsMoving) then return end
+	
 	A.PlayerIsMoving = true;
+	A.PlayerStoppedMoving = false;
 	
-	if(not BuffyFrame:IsVisible() or not self.db.global.AlertMoveFade) then return end
-	if(BuffyFrame.fadeout:IsPlaying() or BuffyFrame.fadeout:IsPlaying() or BuffyFrame.movefadein:IsPlaying()) then return end
-	
-	local alpha = BuffyFrame:GetAlpha();
-	
-	BuffyFrame.fadein:Stop();
-	BuffyFrame.movefadeout:Stop();
-	
-	local animation = BuffyFrame.movefadein:GetAnimations();
-	animation:SetFromAlpha(alpha);
-	
-	BuffyFrame.movefadein:Play();
+	if(BuffyFrame:IsVisible()) then
+		if(self.db.global.AlertMoveFade) then
+			if(BuffyFrame.fadeout:IsPlaying() or BuffyFrame.fadeout:IsPlaying() or BuffyFrame.movefadein:IsPlaying()) then return end
+			
+			local alpha = BuffyFrame:GetAlpha();
+			
+			BuffyFrame.fadein:Stop();
+			BuffyFrame.movefadeout:Stop();
+			
+			local animation = BuffyFrame.movefadein:GetAnimations();
+			animation:SetFromAlpha(alpha);
+			
+			BuffyFrame.movefadein:Play();
+		end
+		
+		if(self.db.global.UnbindWhenMoving) then
+			A:ClearTempBind();
+		end
+	end
 end
 
 function A:PLAYER_STOPPED_MOVING()
+	A.PlayerStoppedMoving = true;
+end
+
+function A:PLAYER_STOPPED_MOVING_FINISH()
 	A.PlayerIsMoving = false;
 	
-	if(not BuffyFrame:IsVisible() or not self.db.global.AlertMoveFade) then return end
-	if(BuffyFrame.fadeout:IsPlaying() or BuffyFrame.movefadeout:IsPlaying()) then return end
-	
-	local alpha = BuffyFrame:GetAlpha();
-	
-	BuffyFrame.fadein:Stop();
-	BuffyFrame.movefadein:Stop();
-	
-	local animation = BuffyFrame.movefadeout:GetAnimations();
-	animation:SetFromAlpha(alpha);
-	
-	BuffyFrame.movefadeout:Play();
+	if(BuffyFrame:IsVisible()) then
+		if(self.db.global.AlertMoveFade) then
+			if(BuffyFrame.fadeout:IsPlaying() or BuffyFrame.movefadeout:IsPlaying()) then return end
+			
+			local alpha = BuffyFrame:GetAlpha();
+			
+			BuffyFrame.fadein:Stop();
+			BuffyFrame.movefadein:Stop();
+			
+			local animation = BuffyFrame.movefadeout:GetAnimations();
+			animation:SetFromAlpha(alpha);
+			
+			BuffyFrame.movefadeout:Play();
+		end
+		
+		if(self.db.global.UnbindWhenMoving) then
+			A:RestoreLastTempBind();
+		end
+	end
 end
 
 E.GROUP_TYPE = {
@@ -2640,12 +2669,14 @@ function A:AddMessage(pattern, ...)
 end
 
 function A:GetBinding()
-	-- return GetBindingKey("CLICK BuffySpellButtonFrame:LeftButton");
 	return A.db.global.Keybind;
 end
 
 function A:SetTempBind(bindType, name)
 	if(not bindType or not name) then return end
+	if(InCombatLockdown()) then return end
+	
+	if(self.db.global.UnbindWhenMoving and A.PlayerIsMoving) then return end
 	
 	local key = A:GetBinding();
 	if(key) then
@@ -2658,7 +2689,15 @@ function A:SetTempBind(bindType, name)
 		BuffySpellButtonFrame:SetAttribute("unit", "player");
 		
 		SetOverrideBindingClick(BuffyFrame, true, key, "BuffySpellButtonFrame", "LeftButton");
+		
+		A.LastTempBind = {bindType, name};
 	end
+end
+
+function A:RestoreLastTempBind()
+	if(not A.LastTempBind) then return end
+	
+	A:SetTempBind(unpack(A.LastTempBind));
 end
 
 function A:ClearTempBind()
