@@ -618,6 +618,11 @@ function A:GetCustomFoodStatPriorityMenu()
 				func = function() self.db.char.FoodPriority[specIndex] = E.STAT.VERSATILITY; A:UpdateBuffs(); end,
 				checked = function() return self.db.char.FoodPriority[specIndex] == E.STAT.VERSATILITY; end,
 			},
+			{
+				text = "Felmouth Frenzy",
+				func = function() self.db.char.FoodPriority[specIndex] = E.STAT.FELMOUTH; A:UpdateBuffs(); end,
+				checked = function() return self.db.char.FoodPriority[specIndex] == E.STAT.FELMOUTH; end,
+			},
 		});
 		
 		if(role == "TANK") then
