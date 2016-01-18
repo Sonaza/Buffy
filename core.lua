@@ -770,15 +770,15 @@ local function AddItemSpell(item, spell)
 	BUFF_ITEM_SPELLS[item] = spell;
 end
 
-AddBuffItems(FLASKS, E.STAT.AGILITY, 	{ 109153, 109145, 118922 });
+AddBuffItems(FLASKS, E.STAT.AGILITY, 	{ 109153, 109145, 118922, 86569 });
 AddItemSpell(109153, 156064); -- Greater Draenic Agility Flask
 AddItemSpell(109145, 156073); -- Draenic Agility Flask
 
-AddBuffItems(FLASKS, E.STAT.STRENGTH,	{ 109156, 109148, 118922 });
+AddBuffItems(FLASKS, E.STAT.STRENGTH,	{ 109156, 109148, 118922, 86569 });
 AddItemSpell(109156, 156080); -- Greater Draenic Strength Flask
 AddItemSpell(109148, 156071); -- Draenic Strength Flask
 
-AddBuffItems(FLASKS, E.STAT.INTELLECT, { 109155, 109147, 118922 });
+AddBuffItems(FLASKS, E.STAT.INTELLECT, { 109155, 109147, 118922, 86569 });
 AddItemSpell(109155, 156079); -- Greater Draenic Intellect Flask
 AddItemSpell(109147, 156070); -- Draenic Intellect Flask
 
@@ -787,6 +787,7 @@ AddItemSpell(109160, 156084); -- Greater Draenic Stamina Flask
 AddItemSpell(109152, 156077); -- Draenic Stamina Flask
 
 AddItemSpell(118922, 176151); -- Oralius' Crystal
+AddItemSpell(86569,  127230); -- Crystal of Insanity
 
 -- Non-consumable runes are listed first
 AddBuffItems(RUNES, E.STAT.AGILITY, 	{ 128482, 128475, 118630 });
@@ -1739,6 +1740,10 @@ function A:IsPlayerInLFR()
 	return false;
 end
 
+function A:FlaskIsNonConsumable(itemID)
+	return (itemID == 118922 or itemID == 86569);
+end
+
 function A:FindBestConsumableItem(consumable_type, preferredStat)
 	local consumablesList = nil;
 	
@@ -1754,7 +1759,7 @@ function A:FindBestConsumableItem(consumable_type, preferredStat)
 		for _, itemID in ipairs(consumablesList[preferredStat]) do
 			local skip = false;
 			
-			if(consumable_type == CONSUMABLE_FLASK and self.db.global.ConsumablesRemind.OnlyInfiniteFlask and not A:PlayerInInstance() and itemID ~= 118922) then
+			if(consumable_type == CONSUMABLE_FLASK and self.db.global.ConsumablesRemind.OnlyInfiniteFlask and not A:PlayerInInstance() and not A:FlaskIsNonConsumable(itemID)) then
 				skip = true;
 			end
 			
@@ -2089,15 +2094,14 @@ function A:UpdateBuffs(forceUpdate)
 						-- Check if player has any flasks in their inventory
 						local bestFlaskID, count = A:FindBestConsumableItem(CONSUMABLE_FLASK, preferredStat);
 						
-						local isInfiniteFlask = (bestFlaskID == 118922);
 						local cooldownExpired = true;
 						
 						-- Cooldown check for the non-consumable "flask" which has one
-						if(isInfiniteFlask) then
+						if(A:FlaskIsNonConsumable(bestFlaskID)) then
 							local startTime, duration = GetItemCooldown(bestFlaskID);
 							cooldownExpired = (startTime == 0 and duration == 0);
 							
-							-- Reset count since the "crystal flask" is not consumed
+							-- Reset count since the "flask" is not consumed
 							count = nil;
 						end
 						
