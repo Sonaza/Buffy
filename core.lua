@@ -4,6 +4,10 @@
 
 local ADDON_NAME, SHARED_DATA = ...;
 
+-- RELOAD UI short command
+SLASH_RELOADUI1 = "/rl"
+SlashCmdList["RELOADUI"] = ReloadUI
+
 local _G = getfenv(0);
 
 local LibStub = LibStub;
@@ -190,6 +194,7 @@ AddBuffSpell(324, 		BUFF_SPECIAL, "SHAMAN_LIGHTNING_SHIELD");
 
 AddBuffSpell(2823, 		BUFF_SPECIAL, "ROGUE_DEADLY_POISON");
 AddBuffSpell(8679, 		BUFF_SPECIAL, "ROGUE_WOUND_POISON");
+AddBuffSpell(200802, 	BUFF_SPECIAL, "ROGUE_AGONIZING_POISON");
 AddBuffSpell(3408, 		BUFF_SPECIAL, "ROGUE_CRIPPLING_POISON");
 AddBuffSpell(108211,	BUFF_SPECIAL, "ROGUE_LEECHING_POISON");
 
@@ -506,7 +511,7 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 		all = {
 			{
-				selfbuff = { BUFFS.ROGUE_DEADLY_POISON, BUFFS.ROGUE_WOUND_POISON, },
+				selfbuff = { BUFFS.ROGUE_DEADLY_POISON, BUFFS.ROGUE_WOUND_POISON, BUFFS.ROGUE_AGONIZING_POISON },
 				condition = function()
 					return CanPoisonWeapons() and A.db.global.Class.Rogue.EnableLethal and not A.db.global.Class.Rogue.WoundPoisonPriority;
 				end,
@@ -520,7 +525,7 @@ local CLASS_CASTABLE_BUFFS = {
 				description = "Missing Lethal Poison",
 			},
 			{
-				noTalent = {3, 2},
+				noTalent = {4, 1},
 				selfbuff = { BUFFS.ROGUE_CRIPPLING_POISON, },
 				condition = function()
 					return CanPoisonWeapons() and A.db.global.Class.Rogue.EnableNonlethal and not A.db.global.Class.Rogue.SkipCrippling;
@@ -528,7 +533,7 @@ local CLASS_CASTABLE_BUFFS = {
 				description = "Missing Non-Lethal Poison",
 			},
 			{
-				hasTalent = {3, 2},
+				hasTalent = {4, 1},
 				selfbuff = { BUFFS.ROGUE_LEECHING_POISON, },
 				condition = function()
 					return CanPoisonWeapons() and A.db.global.Class.Rogue.EnableNonlethal;
@@ -903,7 +908,6 @@ E.RATING_NAMES = {
 	[E.STAT.STAMINA]		= "Stamina",
 	
 	[E.STAT.HASTE]			= "Haste",
-	[E.STAT.MULTISTRIKE]	= "Multistrike",
 	[E.STAT.MASTERY]		= "Mastery",
 	[E.STAT.CRIT]			= "Crit",
 	[E.STAT.VERSATILITY]	= "Versatility",
@@ -912,9 +916,6 @@ E.RATING_NAMES = {
 local RATING_IDENTIFIERS = {
 	[E.STAT.HASTE]		= function()
 		return GetCombatRatingBonus(CR_HASTE_SPELL);
-	end,
-	[E.STAT.MULTISTRIKE]	= function()
-		return GetCombatRatingBonus(CR_MULTISTRIKE);
 	end,
 	[E.STAT.MASTERY]		= function()
 		local mastery, bonusCoeff = GetMasteryEffect();
