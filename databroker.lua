@@ -847,18 +847,7 @@ function Addon:OpenContextMenu(parentframe)
 end
 
 function Addon:UpdateDatabrokerText()
-	-- local buffs = Addon:ScanCurrentBuffs();
-	-- local foundBuffs = 0;
-	-- local numBuffTypes = #Addon.BUFF_TYPES;
-	
-	-- for category, data in pairs(buffs) do
-	-- 	if(data ~= false) then
-	-- 		foundBuffs = foundBuffs + 1;
-	-- 	end
-	-- end
-	
-	-- Addon.databroker.text = string.format("%d/%d |cffffcc00buffs|r", foundBuffs, numBuffTypes);
-	Addon.databroker.text = "it's borked";
+	Addon.databroker.text = "Buffy";
 end
 
 function Addon:GetClassColor(class)
@@ -895,8 +884,6 @@ function Addon:GetPlayerRaidRosterRank()
 	
 	return 0;
 end
-
-local brokerTooltip, brokerTooltipMinWidth;
 
 function Addon:InitializeDatabroker()
 	Addon.databroker = LibDataBroker:NewDataObject(ADDON_NAME, {

@@ -132,9 +132,7 @@ local CLASS_CASTABLE_BUFFS = {
 		
 	},
 	["SHAMAN"] = {
-		all	= {
-			
-		},
+		
 	},
 	["DRUID"] = {
 		[1] = {
