@@ -13,4 +13,4 @@
 		* Pepe \o/
 	* Added support for the new Agonizing Poison for Assassination Rogues. Currently it is prioritised over Deadly Poison by default (option to change priority will be added later).
 	
-Currently the addon for now still only reminds about Draenor consumables. Legion consumables will be added in a later update.
+Currently the addon will still only remind about Draenor consumables. Legion consumables will be added in a later update soon.
