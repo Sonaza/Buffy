@@ -49,42 +49,6 @@ function Addon:IsSpellReady(spellID)
 	return false;
 end
 
-
-local PEPE_TOY_ITEM_ID = 122293;
-
--- Miscellaneous category, low priority selfbuffs or other stuff
-local MISC_CASTABLE_BUFFS = {
-	{
-		selfbuff = { LE.BUFFS.PEPE },
-		skipBuffCheck = true,
-		condition = function()
-			if(not Addon.db.global.PepeReminderEnabled or InCombatLockdown()) then return false end
-			if(not PlayerHasToy(PEPE_TOY_ITEM_ID)) then return false end
-			
-			local hasBuff = Addon:UnitHasBuff("player", LE.BUFFS.PEPE);
-			if(hasBuff) then return false end
-			
-			local start, duration, enable = GetItemCooldown(PEPE_TOY_ITEM_ID);
-			return start == 0 and duration == 0;
-		end,
-		description = function()
-			local quotes = {
-				"You've not got a friend! :(",
-				"Put a birb on it!",
-				"It's dangerous to go alone!",
-				"Pepe is love, Pepe is life",
-				"It's a rough neighborhood",
-				"Pepe for Warchief!",
-			};
-			return quotes[math.floor(GetTime() / 120) % (#quotes) + 1];
-		end,
-		info = {
-			type = "toy",
-			id = PEPE_TOY_ITEM_ID,
-		},
-	},
-}
-
 ----------------------------------------------------------
 
 function Addon:AddBuffItems(item_table, stat_type, items)
@@ -984,7 +948,7 @@ function Addon:UpdateBuffs(forceUpdate)
 	--------------------------------------------------
 	-- Miscellaneous low priority selfbuffs
 	
-	for _, data in ipairs(MISC_CASTABLE_BUFFS) do
+	for _, data in ipairs(LE.MISC_CASTABLE_BUFFS) do
 		local valid = true;
 		
 		if(data.hasTalent) then
@@ -1000,6 +964,7 @@ function Addon:UpdateBuffs(forceUpdate)
 		end
 		
 		if(valid and data.selfbuff and not UnitIsDeadOrGhost("player")) then
+			
 			if(type(data.selfbuff) == "function") then
 				local shouldAlert, buffSpell = data.selfbuff();
 				
