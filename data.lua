@@ -175,6 +175,15 @@ local CLASS_CASTABLE_BUFFS = {
 	["ROGUE"] = {
 		[1] = {
 			{
+				noTalent = { 6, 1 },
+				selfbuff = { LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
+				condition = function()
+					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableLethal and not Addon.db.global.Class.Rogue.WoundPoisonPriority;
+				end,
+				description = "Missing Lethal Poison",
+			},
+			{
+				hasTalent = { 6, 1 },
 				selfbuff = { LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
 				condition = function()
 					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableLethal and not Addon.db.global.Class.Rogue.WoundPoisonPriority;
@@ -218,7 +227,7 @@ local CLASS_CASTABLE_BUFFS = {
 					
 					hasBuff, _, _, remainingLethal, duration = Addon:UnitHasSomeBuff("player", { LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_DEADLY_POISON });
 					
-					local remainingDiff = math.abs(remainingNonLethal - remainingLethal);
+					local remainingDiff = math.abs((remainingNonLethal or 0) - (remainingLethal or 0));
 					return Addon.db.global.Class.Rogue.RefreshBoth and hasBuff and remainingLethal >= duration - 20 and remainingDiff > 20;
 				end,
 				description = "Refresh Non-Lethal Poison Too",
@@ -237,7 +246,7 @@ local CLASS_CASTABLE_BUFFS = {
 					
 					hasBuff, _, _, remainingLethal, duration = Addon:UnitHasSomeBuff("player", { LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_DEADLY_POISON });
 					
-					local remainingDiff = math.abs(remainingNonLethal - remainingLethal);
+					local remainingDiff = math.abs((remainingNonLethal or 0) - (remainingLethal or 0));
 					return Addon.db.global.Class.Rogue.RefreshBoth and hasBuff and remainingLethal >= duration - 20 and remainingDiff > 20;
 				end,
 				description = "Refresh Non-Lethal Poison Too",

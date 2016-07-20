@@ -1,3 +1,6 @@
+## 2.0.1
+* Fix to rogue poison alert error.
+
 ## 2.0.0 
 * Legion update.
 	* With the Legion removal of raid buffs all of the notifications were removed. It's a sad, sad day.
