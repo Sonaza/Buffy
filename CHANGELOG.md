@@ -1,3 +1,7 @@
+## 2.0.2
+* Disabled Pepe alert in PVP. You'll have to use the whiste by yourself if you want to continue battling with him.
+* Added support for Arcane Mage talent Arcane Familiar.
+
 ## 2.0.1
 * Fix to rogue poison alert error.
 

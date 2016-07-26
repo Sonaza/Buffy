@@ -102,7 +102,6 @@ function Addon:InitializeDatabase()
 				Enabled = true,
 				
 				Mode = LE.RAID_CONSUMABLES.RAIDS_ONLY,
-				-- EnableInParty = nil,
 				
 				Flasks = true,
 				Runes = false,
@@ -122,14 +121,10 @@ function Addon:InitializeDatabase()
 				NotInCombat = true,
 			},
 			
-			Announcements = {
-				Enabled = false,
-				PerPlayer = false,
-				OnlyToSelf = false,
-				OnlyIfLeaderOrAssist = true,
-			},
-			
 			Class = {
+				Mage = {
+					EnableArcaneFamiliar = true,	
+				},
 				Rogue = {
 					EnableLethal = true,
 					EnableNonlethal = true,
@@ -144,36 +139,12 @@ function Addon:InitializeDatabase()
 					ExpiryOverride = true,
 					EnableGrimoireSacrificeAlert = true,
 				},
-				Shaman = {
-					RemindShield = true,
-				},
-				Hunter = {
-					EnableLoneWolf = true,
-					CancelPackAlert = true,
-				},
-				Priest = {
-					RemindShadowform = true,
-				},
 				Paladin = {
 					RemindRighteousFury = true,
-				},
-				DeathKnight = {
-					PresenceAlert = true,
-					OnlyInCombat = true,
-					Presences = {
-						[1] = 1,
-						[2] = 2,
-						[3] = 3,
-					},
 				},
 				Druid = {
 					FormAlert = true,
 					OnlyInCombat = true,
-				},
-				Warrior = {
-					StanceAlert = true,
-					OnlyInCombat = false,
-					ProtectionStance = 1,
 				},
 			},
 		},
@@ -283,6 +254,22 @@ function Addon:GetClassOptions()
 		-- 		},
 		-- 	},
 		-- },
+		["MAGE"]	= {
+			text = "Mage Options",
+			hasArrow = true,
+			notCheckable = true,
+			menuList = {
+				{
+					text = "Mage Options", isTitle = true, notCheckable = true,
+				},
+				{
+					text = "Alert about Arcane Familiar",
+					func = function() Addon.db.global.Class.Mage.EnableArcaneFamiliar = not Addon.db.global.Class.Mage.EnableArcaneFamiliar; Addon:UpdateBuffs(); end,
+					checked = function() return Addon.db.global.Class.Mage.EnableArcaneFamiliar; end,
+					isNotRadio = true,
+				},
+			},
+		},
 		["DRUID"]	= {
 			text = "Druid Options",
 			hasArrow = true,

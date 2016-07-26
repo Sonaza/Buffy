@@ -83,6 +83,8 @@ Addon:AddBuffSpell(20707,	LE.BUFF_SPECIAL, "WARLOCK_SOULSTONE");
 Addon:AddBuffSpell(108503,	LE.BUFF_SPECIAL, "WARLOCK_GRIMOIRE_OF_SACRIFICE");
 Addon:AddBuffSpell(196099,	LE.BUFF_SPECIAL, "WARLOCK_GRIMOIRE_OF_SACRIFICE_EFFECT");
 
+Addon:AddBuffSpell(205022,	LE.BUFF_SPECIAL, "MAGE_ARCANE_FAMILIAR");
+
 Addon:AddBuffSpell(5487,	LE.BUFF_SPECIAL, "DRUID_BEAR_FORM");
 Addon:AddBuffSpell(768,		LE.BUFF_SPECIAL, "DRUID_CAT_FORM");
 Addon:AddBuffSpell(24858,	LE.BUFF_SPECIAL, "DRUID_MOONKIN_FORM");
@@ -254,7 +256,16 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 	},
 	["MAGE"] = {
-		
+		[1]	= {
+			{
+				hasTalent = { 1, 1 },
+				selfbuff = { LE.BUFFS.MAGE_ARCANE_FAMILIAR, },
+				condition = function()
+					return Addon.db.global.Class.Mage.EnableArcaneFamiliar;
+				end,
+				-- description = "Missing",
+			},
+		},
 	},
 	["WARLOCK"] = {
 		special = {
@@ -341,6 +352,9 @@ LE.MISC_CASTABLE_BUFFS = {
 		condition = function()
 			if(not Addon.db.global.PepeReminderEnabled or InCombatLockdown()) then return false end
 			if(not PlayerHasToy(PEPE_TOY_ITEM_ID)) then return false end
+			
+			local inInstance, instanceType = Addon:PlayerInInstance();
+			if(inInstance and (instanceType == "pvp" or instanceType == "arena")) then return false end
 			
 			local hasBuff = Addon:UnitHasBuff("player", LE.BUFFS.PEPE);
 			if(hasBuff) then return false end
