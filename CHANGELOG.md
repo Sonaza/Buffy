@@ -1,3 +1,8 @@
+## 2.0.3
+* Added support for Paladin blessings. The addon attempts to give buffs with priority on player and grouped tanks. If you wish only to be reminded instead you can enable that in the Paladin options.
+* Added font support for non-latin alphabet.
+* Fixed bug with food alerts.
+
 ## 2.0.2
 * Disabled Pepe alert in PVP. You'll have to use the whiste by yourself if you want to continue battling with him.
 * Added support for Arcane Mage talent Arcane Familiar.
@@ -15,7 +20,7 @@
 	
 	* Buffy will still continue to remind about the following:
 		* Some class buffs e.g. Assassination Rogue poisons and Warlock grimoire.
-		* Some class specific toggles e.g. druid forms.
+		* Some class specific toggles e.g. Druid forms.
 		* Consumables like flasks, runes and food.
 		* Pepe \o/
 	* Added support for the new Agonizing Poison for Assassination Rogues. Currently it is prioritised over Deadly Poison by default (option to change priority will be added later).

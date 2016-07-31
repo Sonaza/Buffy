@@ -22,12 +22,11 @@ LE.STAT = {
 	STAMINA		= 0x008,
 	
 	HASTE		= 0x010,
-	MULTISTRIKE	= 0x020,
-	MASTERY		= 0x040,
-	CRIT		= 0x080,
-	VERSATILITY	= 0x100,
+	MASTERY		= 0x020,
+	CRIT		= 0x040,
+	VERSATILITY	= 0x080,
 	
-	FELMOUTH	= 0x200,
+	FELMOUTH	= 0x0F0,
 	
 	AUTOMATIC 	= 0xFFF,
 };
@@ -89,6 +88,10 @@ Addon:AddBuffSpell(5487,	LE.BUFF_SPECIAL, "DRUID_BEAR_FORM");
 Addon:AddBuffSpell(768,		LE.BUFF_SPECIAL, "DRUID_CAT_FORM");
 Addon:AddBuffSpell(24858,	LE.BUFF_SPECIAL, "DRUID_MOONKIN_FORM");
 
+Addon:AddBuffSpell(203528,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_MIGHT");
+Addon:AddBuffSpell(203538,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_KINGS");
+Addon:AddBuffSpell(203539,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_WISDOM");
+
 Addon:AddBuffSpell(181943,	LE.BUFF_SPECIAL, "PEPE");
 
 local function CanPoisonWeapons()
@@ -124,7 +127,141 @@ local CLASS_CASTABLE_BUFFS = {
 	},
 	["PALADIN"]	= {
 		[3]	= {
-		
+			{
+				vars = {
+					buffs = {
+						LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT,
+						LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS,
+						LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM,
+					},
+					roleBuffs = { -- Priorities for roles
+						["DAMAGER"] = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM },
+						["TANK"]    = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT },
+						["HEALER"]  = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT },
+						["NONE"]    = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM },
+					},
+					roleOrder = { "TANK", "DAMAGER", "HEALER", "NONE" },
+					buffsRemaining = 1337,
+				},
+				bufflist = function(self)
+					local buffStatus = Addon:ScanExclusiveBuffList(self.buffs);
+					local buffsRemaining = 3 - #buffStatus["player"];
+					
+					self.buffsRemaining = buffsRemaining;
+					
+					if(Addon.db.global.Class.Paladin.OnlyRemind) then
+						return buffsRemaining > 0, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT;
+					end
+					
+					if(buffsRemaining > 0) then
+						local isSolo = Addon:GetGroupType() == LE.GROUP_TYPE.SOLO;
+						
+						local buffToCast = nil;
+						
+						if(isSolo) then
+							for _, spell in ipairs(self.buffs) do
+								local hasBuff = Addon:UnitHasBuff("player", spell);
+								if(not hasBuff) then
+									buffToCast = {
+										spell = spell,
+										target = "player",
+									};
+									break;
+								end
+							end
+						else
+							-- Player probably wants to self buff might at the very least
+							local hasBuff = Addon:UnitHasBuff("player", self.roleBuffs["DAMAGER"][1]);
+							if(not hasBuff) then
+								buffToCast = {
+									spell = self.roleBuffs["DAMAGER"][1],
+									target = "player",
+								};
+							end
+							
+							local missingBuffs = Addon:ScanMissingPartyBuffsByRole(self.buffs);
+							local playerUnitID = Addon:GetPlayerUnitID();
+							
+							for role, units in pairs(missingBuffs) do
+								local sortedList = {};
+								for unit, buffs in pairs(units) do
+									if(Addon:UnitInRange(unit)) then
+										tinsert(sortedList, {
+											unit = unit,
+											buffs = buffs,
+										})
+									end
+								end
+								
+								if(#sortedList > 1) then
+									table.sort(sortedList, function(a, b)
+										if(a == nil and b == nil) then return false end
+										if(a == nil) then return true end
+										if(b == nil) then return false end
+										
+										local ac = (a.unit == playerUnitID) and 1 or 0;
+										local bc = (b.unit == playerUnitID) and 1 or 0;
+										
+										return ac > bc;
+									end);
+								end
+								
+								missingBuffs[role] = sortedList;
+							end
+							
+							for priority = 1, 3 do
+								for _, role in ipairs(self.roleOrder) do
+									if(missingBuffs[role]) then
+										local spell = self.roleBuffs[role][priority];
+										
+										for _s, missingBuffsData in ipairs(missingBuffs[role]) do
+											local unit = missingBuffsData.unit;
+											local isMissing = Addon:InArray(missingBuffsData.buffs, spell);
+											
+											if(isMissing) then
+												buffToCast = {
+													spell = spell,
+													target = unit,
+												};
+											end
+											
+											if(buffToCast) then break end
+										end
+									end
+									
+									if(buffToCast) then break end
+								end
+							end
+						end
+						
+						if(buffToCast) then
+							self.target = buffToCast.target;
+							return true, buffToCast.spell, buffToCast.target;
+						end
+					end
+					
+					return false;
+				end,
+				condition = function(self)
+					return Addon.db.global.Class.Paladin.EnableBlessings;
+				end,
+				description = function(self)
+					return string.format("Missing %d blessing%s", self.buffsRemaining, self.buffsRemaining == 1 and "" or "s");
+				end,
+				secondary = function(self)
+					if(Addon.db.global.Class.Paladin.OnlyRemind) then
+						return "A Greater Blessing";
+					end
+				end,
+				icon = function()
+					if(Addon.db.global.Class.Paladin.OnlyRemind) then
+						return 135993; -- Blessing of Kings icon
+					end
+				end,
+				noCast = function()
+					return Addon.db.global.Class.Paladin.OnlyRemind;
+				end,
+			},
 		},
 	},
 	["MONK"] = {
@@ -139,7 +276,7 @@ local CLASS_CASTABLE_BUFFS = {
 	["DRUID"] = {
 		[1] = {
 			{
-				selfbuff = { LE.BUFFS.DRUID_MOONKIN_FORM },
+				bufflist = { LE.BUFFS.DRUID_MOONKIN_FORM },
 				condition = function()
 					if(not Addon.db.global.Class.Druid.FormAlert) then return false end
 					if(Addon.db.global.Class.Druid.OnlyInCombat and not InCombatLockdown()) then return false end
@@ -151,7 +288,7 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 		[2] = {
 			{
-				selfbuff = { LE.BUFFS.DRUID_CAT_FORM },
+				bufflist = { LE.BUFFS.DRUID_CAT_FORM },
 				condition = function()
 					if(not Addon.db.global.Class.Druid.FormAlert) then return false end
 					if(Addon.db.global.Class.Druid.OnlyInCombat and not InCombatLockdown()) then return false end
@@ -163,7 +300,7 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 		[3] = {
 			{
-				selfbuff = { LE.BUFFS.DRUID_BEAR_FORM },
+				bufflist = { LE.BUFFS.DRUID_BEAR_FORM },
 				condition = function()
 					if(not Addon.db.global.Class.Druid.FormAlert) then return false end
 					if(Addon.db.global.Class.Druid.OnlyInCombat and not InCombatLockdown()) then return false end
@@ -178,7 +315,7 @@ local CLASS_CASTABLE_BUFFS = {
 		[1] = {
 			{
 				noTalent = { 6, 1 },
-				selfbuff = { LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
+				bufflist = { LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
 				condition = function()
 					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableLethal and not Addon.db.global.Class.Rogue.WoundPoisonPriority;
 				end,
@@ -186,14 +323,14 @@ local CLASS_CASTABLE_BUFFS = {
 			},
 			{
 				hasTalent = { 6, 1 },
-				selfbuff = { LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
+				bufflist = { LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
 				condition = function()
 					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableLethal and not Addon.db.global.Class.Rogue.WoundPoisonPriority;
 				end,
 				description = "Missing Lethal Poison",
 			},
 			{
-				selfbuff = { LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_DEADLY_POISON, },
+				bufflist = { LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_DEADLY_POISON, },
 				condition = function()
 					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableLethal and Addon.db.global.Class.Rogue.WoundPoisonPriority;
 				end,
@@ -201,7 +338,7 @@ local CLASS_CASTABLE_BUFFS = {
 			},
 			{
 				noTalent = { 4, 1 },
-				selfbuff = { LE.BUFFS.ROGUE_CRIPPLING_POISON, },
+				bufflist = { LE.BUFFS.ROGUE_CRIPPLING_POISON, },
 				condition = function()
 					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableNonlethal and not Addon.db.global.Class.Rogue.SkipCrippling;
 				end,
@@ -209,7 +346,7 @@ local CLASS_CASTABLE_BUFFS = {
 			},
 			{
 				hasTalent = { 4, 1 },
-				selfbuff = { LE.BUFFS.ROGUE_LEECHING_POISON, },
+				bufflist = { LE.BUFFS.ROGUE_LEECHING_POISON, },
 				condition = function()
 					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableNonlethal;
 				end,
@@ -217,7 +354,7 @@ local CLASS_CASTABLE_BUFFS = {
 			},
 			{
 				noTalent = { 4, 1 },
-				selfbuff = { LE.BUFFS.ROGUE_CRIPPLING_POISON },
+				bufflist = { LE.BUFFS.ROGUE_CRIPPLING_POISON },
 				skipBuffCheck = true,
 				condition = function()
 					if(not CanPoisonWeapons() or not Addon.db.global.Class.Rogue.EnableNonlethal or Addon.db.global.Class.Rogue.SkipCrippling) then return end
@@ -236,7 +373,7 @@ local CLASS_CASTABLE_BUFFS = {
 			},
 			{
 				hasTalent = { 4, 1 },
-				selfbuff = { LE.BUFFS.ROGUE_LEECHING_POISON, },
+				bufflist = { LE.BUFFS.ROGUE_LEECHING_POISON, },
 				skipBuffCheck = true,
 				condition = function()
 					if(not CanPoisonWeapons() or not Addon.db.global.Class.Rogue.EnableNonlethal) then return end
@@ -259,7 +396,7 @@ local CLASS_CASTABLE_BUFFS = {
 		[1]	= {
 			{
 				hasTalent = { 1, 1 },
-				selfbuff = { LE.BUFFS.MAGE_ARCANE_FAMILIAR, },
+				bufflist = { LE.BUFFS.MAGE_ARCANE_FAMILIAR, },
 				condition = function()
 					return Addon.db.global.Class.Mage.EnableArcaneFamiliar;
 				end,
@@ -270,7 +407,7 @@ local CLASS_CASTABLE_BUFFS = {
 	["WARLOCK"] = {
 		special = {
 			{
-				selfbuff = { LE.BUFFS.WARLOCK_SOULSTONE, },
+				bufflist = { LE.BUFFS.WARLOCK_SOULSTONE, },
 				condition = function()
 					if(Addon:IsSpellReady(LE.BUFFS.WARLOCK_SOULSTONE) and Addon.db.global.Class.Warlock.EnableSoulstone) then
 						if(Addon.db.global.Class.Warlock.OnlyEnableSolo and Addon:GetGroupType() ~= LE.GROUP_TYPE.SOLO) then return false end
@@ -287,7 +424,7 @@ local CLASS_CASTABLE_BUFFS = {
 			},
 			{
 				hasTalent = { 6, 3 },
-				selfbuff = { LE.BUFFS.WARLOCK_GRIMOIRE_OF_SACRIFICE },
+				bufflist = { LE.BUFFS.WARLOCK_GRIMOIRE_OF_SACRIFICE },
 				condition = function()
 					-- This talent location has something else for demonology
 					if(GetSpecialization() == 2) then return false end
@@ -347,7 +484,7 @@ local PEPE_TOY_ITEM_ID = 122293;
 -- Miscellaneous category, low priority selfbuffs or other stuff
 LE.MISC_CASTABLE_BUFFS = {
 	{
-		selfbuff = { LE.BUFFS.PEPE },
+		bufflist = { LE.BUFFS.PEPE },
 		skipBuffCheck = true,
 		condition = function()
 			if(not Addon.db.global.PepeReminderEnabled or InCombatLockdown()) then return false end

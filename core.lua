@@ -397,6 +397,21 @@ local function GroupIterator()
 	end
 end
 
+function Addon:GetPlayerUnitID()
+	local groupType = Addon:GetGroupType();
+	if(groupType == LE.GROUP_TYPE.SOLO or groupType == LE.GROUP_TYPE.PARTY) then
+		return "player";
+	elseif(groupType == LE.GROUP_TYPE.RAID) then
+		for index, unit in GroupIterator() do
+			if(UnitIsUnit(unit, "player")) then
+				return Addon:GetUnitID(groupType, index);
+			end
+		end
+	end
+	
+	return nil;
+end
+
 function Addon:UnitIsPet(searchunit)
 	if(not searchunit) then return false end
 	
@@ -589,6 +604,12 @@ function Addon:ShouldDoUpdate()
 	return not InCombatLockdown() or debugprofilestop() >= Addon.LastBuffsUpdate + 950;
 end
 
+LE.BUFF_STATE = {
+	NO_BUFF 			= 0,
+	HAS_BUFF 			= 1,
+	HAS_BUFF_BY_PLAYER  = 2,
+};
+
 function Addon:ScanBuffList(bufflist)
 	if(not bufflist or type(bufflist) ~= "table") then return nil end
 	
@@ -597,53 +618,97 @@ function Addon:ScanBuffList(bufflist)
 	for _, spell in ipairs(bufflist) do
 		if(not spell) then return nil end
 		
-		local spellCategory = BUFF_CATEGORY_BY_SPELL[spell];
-		if(not spellCategory) then return nil end
-		
-		local checkCategories = {};
-		
-		for _, category in pairs(BUFF_TYPES) do
-			if(bit.band(spellCategory, category) > 0) then
-				tinsert(checkCategories, category);
-			end
-		end
-		
-		for _, category in ipairs(checkCategories) do
-			if(not partyBuffState[category]) then
-				partyBuffState[category] = {};
-			end
+		for index, unit in GroupIterator() do
+			local buffState = LE.BUFF_STATE.NO_BUFF;
 			
-			for index, unit in GroupIterator() do
-				local hasBuff, isCastByPlayer, buffSpell, caster, willExpireSoon = Addon:UnitHasCategoryBuff(unit, category);
+			local hasBuff, isCastByPlayer, unitCaster, remaining, duration = Addon:UnitHasBuff(unit, spell);
+			local willExpireSoon = nil;
+			
+			if(hasBuff) then
+				willExpireSoon = Addon:WillBuffExpireSoon(remaining);
 				
-				if(hasBuff ~= nil) then
-					local buffState = E.BUFF_STATE.NO_BUFF;
-					
-					if(hasBuff) then
-						if(not isCastByPlayer) then
-							buffState = E.BUFF_STATE.HAS_BUFF;
-						else
-							buffState = E.BUFF_STATE.HAS_BUFF_BY_PLAYER;
-						end
-					end
-					
-					partyBuffState[category][unit] = {
-						state = buffState,
-						expiring = willExpireSoon,
-					};
+				if(not isCastByPlayer) then
+					buffState = LE.BUFF_STATE.HAS_BUFF;
+				else
+					buffState = LE.BUFF_STATE.HAS_BUFF_BY_PLAYER;
 				end
 			end
+				
+			partyBuffState[unit] = {
+				state       = buffState,
+				remaining   = remaining,
+				expiring    = willExpireSoon,
+				caster      = unitCaster,
+			};
 		end
 	end
 	
 	return partyBuffState;
 end
 
-LE.BUFF_STATE = {
-	NO_BUFF 			= 0,
-	HAS_BUFF 			= 1,
-	HAS_BUFF_BY_PLAYER  = 2,
-};
+-- Buffy:ScanExclusiveBuffList({ 203528, 203538, 203539 })
+function Addon:ScanExclusiveBuffList(bufflist)
+	if(not bufflist or type(bufflist) ~= "table") then return nil end
+	
+	local partyBuffs = {
+		["player"] = {},
+	};
+	
+	for _, spell in ipairs(bufflist) do
+		if(not spell) then return nil end
+		
+		for index, unit in GroupIterator() do
+			local hasBuff, isCastByPlayer, unitCaster, remaining, duration = Addon:UnitHasBuff(unit, spell);
+			unitCaster = unitCaster or "unknown";
+			
+			if(hasBuff) then
+				partyBuffs[unitCaster] = partyBuffs[unitCaster] or {};
+				
+				tinsert(partyBuffs[unitCaster], {
+					spell       = spell,
+					unit        = unit,
+					remaining   = remaining,
+					expiring    = Addon:WillBuffExpireSoon(remaining),
+				});
+			end
+		end
+	end
+	
+	return partyBuffs;
+end
+
+-- Buffy:ScanMissingPartyBuffsByRole({ 203528, 203538, 203539 })
+function Addon:ScanMissingPartyBuffsByRole(bufflist)
+	if(not bufflist or type(bufflist) ~= "table") then return nil end
+	
+	local missingBuffs = {};
+	
+	for _, spell in ipairs(bufflist) do
+		if(not spell) then return nil end
+		
+		for index, unit in GroupIterator() do
+			local unitRole = UnitGroupRolesAssigned(unit);
+			
+			missingBuffs[unitRole]       = missingBuffs[unitRole] or {};
+			missingBuffs[unitRole][unit] = missingBuffs[unitRole][unit] or {};
+			
+			local hasBuff = Addon:UnitHasBuff(unit, spell);
+			
+			if(not hasBuff) then
+				tinsert(missingBuffs[unitRole][unit], spell);
+			end
+		end
+	end
+	
+	return missingBuffs;
+end
+
+function Addon:InArray(haystack, needle)
+	for _, value in pairs(haystack) do
+		if(value == needle) then return true end
+	end
+	return false;
+end
 
 function Addon:UpdateBuffs(forceUpdate)
 	if(Addon:ShouldDoUpdate() or forceUpdate) then
@@ -689,6 +754,8 @@ function Addon:UpdateBuffs(forceUpdate)
 	local infoUnits = {};
 	
 	for _, data in ipairs(buffs) do
+		data.vars = data.vars or {};
+		
 		local valid = true;
 		
 		if(data.hasTalent) then
@@ -700,13 +767,13 @@ function Addon:UpdateBuffs(forceUpdate)
 		end
 		
 		if(data.condition and type(data.condition) == "function") then
-			valid = valid and data.condition();
+			valid = valid and data.condition(data.vars);
 		end
 		
 		if(valid) then
-			if(data.selfbuff and not UnitIsDeadOrGhost("player")) then
-				if(type(data.selfbuff) == "function") then
-					local shouldAlert, buffSpell = data.selfbuff();
+			if(data.bufflist and not UnitIsDeadOrGhost("player")) then
+				if(type(data.bufflist) == "function") then
+					local shouldAlert, buffSpell, buffTarget = data.bufflist(data.vars);
 					
 					if(data.skipBuffCheck or shouldAlert and IsSpellKnown(buffSpell)) then
 						local alertType = LE.ALERT_TYPE_SPELL;
@@ -723,25 +790,34 @@ function Addon:UpdateBuffs(forceUpdate)
 						end
 							
 						Addon:ShowBuffyAlert(alertType, alertID, {
-							primary = data.primary,
-							secondary = data.secondary,
-							description = data.description,
-							info = data.info,
-						});
+								primary     = data.primary,
+								secondary   = data.secondary,
+								description = data.description,
+								target      = buffTarget,
+								info        = data.info,
+								noCast      = data.noCast,
+								icon        = data.icon,
+							},
+							data.vars
+						);
 						return;
 					end
 				else
-					local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.selfbuff);
+					local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.bufflist);
 					
 					if(data.skipBuffCheck or (not hasBuff or (buffExpiring and canShowExpiration)) and buffSpell and IsSpellKnown(buffSpell)) then
 						Addon:ShowBuffyAlert(LE.ALERT_TYPE_SPELL, buffSpell, {
-							primary = data.primary,
-							secondary = data.secondary,
-							description = data.description,
-							info = data.info,
-							expiring = buffExpiring,
-							remaining = Addon:GetBuffRemaining("player", buffSpell),
-						});
+								primary     = data.primary,
+								secondary   = data.secondary,
+								description = data.description,
+								info        = data.info,
+								expiring    = buffExpiring,
+								remaining   = Addon:GetBuffRemaining("player", buffSpell),
+								noCast      = data.noCast,
+								icon        = data.icon,
+							},
+							data.vars
+						);
 						
 						return;
 					end
@@ -960,13 +1036,13 @@ function Addon:UpdateBuffs(forceUpdate)
 		end
 		
 		if(data.condition and type(data.condition) == "function") then
-			valid = valid and data.condition();
+			valid = valid and data.condition(data.vars);
 		end
 		
-		if(valid and data.selfbuff and not UnitIsDeadOrGhost("player")) then
+		if(valid and data.bufflist and not UnitIsDeadOrGhost("player")) then
 			
-			if(type(data.selfbuff) == "function") then
-				local shouldAlert, buffSpell = data.selfbuff();
+			if(type(data.bufflist) == "function") then
+				local shouldAlert, buffSpell = data.bufflist(data.vars);
 				
 				if(data.skipBuffCheck or shouldAlert and IsSpellKnown(buffSpell)) then
 					local alertType = LE.ALERT_TYPE_SPELL;
@@ -991,7 +1067,7 @@ function Addon:UpdateBuffs(forceUpdate)
 					return;
 				end
 			else
-				local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.selfbuff);
+				local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.bufflist);
 				
 				if(data.skipBuffCheck or (not hasBuff or (buffExpiring and canShowExpiration)) and IsSpellKnown(buffSpell)) then
 					Addon:ShowBuffyAlert(LE.ALERT_TYPE_SPELL, buffSpell, {
@@ -1066,13 +1142,30 @@ function Addon:FormatTime(t, literal)
 	end
 end
 
-function Addon:ShowBuffyAlert(alert_type, id, data)
+function Addon:GetMultiValue(value, vars)
+	if(type(value) == "function") then
+		return value(vars);
+	end
+	return value;
+end
+
+function Addon:GetColorizedUnitName(unit)
+	local name, server = UnitFullName(unit);
+	if(server and server ~= GetRealmName()) then
+		name = ("%s-%s"):format(name, string.sub(server, 1, 3));
+	end
+	
+	local _, class = UnitClass(unit);
+	local color = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[class or 'PRIEST'];
+	
+	return string.format("|c%s%s|r", color.colorStr, name);
+end
+
+function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 	if(not id) then return end
 	
-	SBA = { alert_type, id, data };
-	
 	local doAnimatedSwitch = false;
-	local alertSignature = alert_type .. "@" .. id;
+	local alertSignature = alert_type .. "@" .. id .. "@" .. (data.target or "notarget");
 	
 	if(Addon.CurrentAlert ~= alertSignature and BuffyFrame:IsShown()) then
 		Addon:CopyAlertToSwitchFrame();
@@ -1087,65 +1180,73 @@ function Addon:ShowBuffyAlert(alert_type, id, data)
 	local _;
 	local name, icon;
 	
+	local primaryText = Addon:GetMultiValue(data.primary, vars);
+	local secondaryText = Addon:GetMultiValue(data.secondary, vars);
+	local priorityIcon = Addon:GetMultiValue(data.icon, vars);
+	
+	local noCast = Addon:GetMultiValue(data.noCast, vars);
+	if(not InCombatLockdown() and noCast) then
+		Addon:ClearTempBind();
+	end
+	
+	local targetNameText = "";
+	if(data.target) then
+		targetNameText = string.format(" on %s", Addon:GetColorizedUnitName(data.target));
+	end
+	
 	if(data.info and not data.noCast) then
 		name, _, _, _, _, _, _, _, _, icon = GetItemInfo(data.info.id);
-		BuffyFrame.icon.texture:SetTexture(icon);
+		BuffyFrame.icon.texture:SetTexture(priorityIcon or icon);
 		
 		BuffyFrame.Tooltip = {
 			type = LE.ALERT_TYPE_ITEM,
 			id = data.info.id,
 		};
 		
-		if(not InCombatLockdown() and not data.noCast) then
-			Addon:SetTempBind(data.info.type, data.info.id);
+		if(not InCombatLockdown() and not noCast) then
+			Addon:SetTempBind(data.info.type, data.info.id, data.target);
 		end
 		
-		BuffyFrame.title:SetFormattedText("|cfff1da54%s|r|n%s", data.primary or "Use", data.secondary or name or "<Error>");
+		BuffyFrame.title:SetFormattedText("|cfff1da54%s|r%s|n%s", primaryText or "Use", targetNameText, secondaryText or name or "<Error>");
 	elseif(alert_type == LE.ALERT_TYPE_SPELL) then
 		local realSpellID = Addon:GetRealSpellID(id);
 		name, _, icon = GetSpellInfo(realSpellID);
-		BuffyFrame.icon.texture:SetTexture(icon);
+		BuffyFrame.icon.texture:SetTexture(priorityIcon or icon);
 		
 		BuffyFrame.Tooltip = {
 			type = LE.ALERT_TYPE_SPELL,
 			id = realSpellID,
 		};
 		
-		if(not InCombatLockdown() and not data.noCast) then
-			Addon:SetTempBind("spell", name);
+		if(not InCombatLockdown() and not noCast) then
+			Addon:SetTempBind("spell", name, data.target);
 		end
 		
-		BuffyFrame.title:SetFormattedText("|cfff1da54%s|r|n%s", data.primary or "Cast", data.secondary or name or "<Error>");
+		BuffyFrame.title:SetFormattedText("|cfff1da54%s|r%s|n%s", primaryText or "Cast", targetNameText, secondaryText or name or "<Error>");
 	elseif(alert_type == LE.ALERT_TYPE_ITEM) then
 		name, _, _, _, _, _, _, _, _, icon = GetItemInfo(id);
-		BuffyFrame.icon.texture:SetTexture(icon);
+		BuffyFrame.icon.texture:SetTexture(priorityIcon or icon);
 		
 		BuffyFrame.Tooltip = {
 			type = LE.ALERT_TYPE_ITEM,
 			id = id,
 		};
 		
-		if(not InCombatLockdown() and self.db.global.ConsumablesRemind.KeybindEnabled and not data.noCast) then
-			Addon:SetTempBind("item", name);
+		if(not InCombatLockdown() and self.db.global.ConsumablesRemind.KeybindEnabled and not noCast) then
+			Addon:SetTempBind("item", name, data.target);
 		end
 		
-		BuffyFrame.title:SetFormattedText("|cfff1da54%s|r|n%s", data.primary or "Use", data.secondary or name or "<Error>");
+		BuffyFrame.title:SetFormattedText("|cfff1da54%s|r%s|n%s", primaryText or "Use", targetNameText, secondaryText or name or "<Error>");
+	elseif(alert_type == LE.ALERT_TYPE_SPECIAL) then
+		BuffyFrame.icon.texture:SetTexture(priorityIcon);
+		BuffyFrame.title:SetFormattedText("|cfff1da54%s|r|n%s", primaryText or "", secondaryText or "");
 	end
 	
 	BuffyFrame.description:SetText("");
 	BuffyFrame.description:Hide();
 	
 	if(data) then
-		if(alert_type == LE.ALERT_TYPE_SPECIAL) then
-			BuffyFrame.icon.texture:SetTexture(data.icon);
-			BuffyFrame.title:SetFormattedText("|cfff1da54%s|r|n%s", data.primary or "", data.secondary or "");
-		end
-		
-		if(not data.expiring and data.units and Addon:GetGroupType() ~= LE.GROUP_TYPE.SOLO and data.category) then
-			local numUnits = #data.units;
-			BuffyFrame.description:SetFormattedText("%d player%s missing %s", numUnits, numUnits == 1 and "" or "s", LE.BUFF_TYPE_NAMES[data.category]);
-			BuffyFrame.description:Show();
-		elseif(data.expiring and data.remaining) then
+		if(data.expiring and data.remaining) then
 			if(alert_type == LE.ALERT_TYPE_ITEM and tonumber(data.count)) then
 				BuffyFrame.description:SetFormattedText("Expiring in %s / You have |cfff1da54%d|r", Addon:FormatTime(data.remaining), data.count);
 			else
@@ -1156,12 +1257,7 @@ function Addon:ShowBuffyAlert(alert_type, id, data)
 			BuffyFrame.description:SetFormattedText("You have |cfff1da54%d|r in your inventory", tonumber(data.count));
 			BuffyFrame.description:Show();
 		elseif(data.description) then
-			local text;
-			if(type(data.description) == "function") then
-				text = data.description();
-			else
-				text = data.description;
-			end
+			local text = Addon:GetMultiValue(data.description, vars);
 			BuffyFrame.description:SetText(text);
 			BuffyFrame.description:Show();
 		end
@@ -1361,7 +1457,7 @@ function Addon:GetBinding()
 	return Addon.db.global.Keybind;
 end
 
-function Addon:SetTempBind(bindType, name)
+function Addon:SetTempBind(bindType, name, target)
 	if(not bindType or not name) then return end
 	if(InCombatLockdown()) then return end
 	
@@ -1375,11 +1471,15 @@ function Addon:SetTempBind(bindType, name)
 			BuffySpellButtonFrame:SetAttribute(bindType .. "1", name);
 		end
 		
-		BuffySpellButtonFrame:SetAttribute("unit", "player");
+		if(not target) then
+			BuffySpellButtonFrame:SetAttribute("unit1", "player");
+		else
+			BuffySpellButtonFrame:SetAttribute("unit1", target);
+		end
 		
 		SetOverrideBindingClick(BuffyFrame, true, key, "BuffySpellButtonFrame", "LeftButton");
 		
-		Addon.LastTempBind = {bindType, name};
+		Addon.LastTempBind = {bindType, name, target};
 	end
 end
 

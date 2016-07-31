@@ -140,7 +140,8 @@ function Addon:InitializeDatabase()
 					EnableGrimoireSacrificeAlert = true,
 				},
 				Paladin = {
-					RemindRighteousFury = true,
+					EnableBlessings = true,
+					OnlyRemind = false,
 				},
 				Druid = {
 					FormAlert = true,
@@ -244,16 +245,28 @@ function Addon:GetClassOptions()
 				},
 			},
 		},
-		-- ["PALADIN"]	= {
-		-- 	text = "Paladin Options",
-		-- 	hasArrow = true,
-		-- 	notCheckable = true,
-		-- 	menuList = {
-		-- 		{
-		-- 			text = "Paladin Options", isTitle = true, notCheckable = true,
-		-- 		},
-		-- 	},
-		-- },
+		["PALADIN"]	= {
+			text = "Paladin Options",
+			hasArrow = true,
+			notCheckable = true,
+			menuList = {
+				{
+					text = "Paladin Options", isTitle = true, notCheckable = true,
+				},
+				{
+					text = "Remind about Greater Blessings",
+					func = function() Addon.db.global.Class.Paladin.EnableBlessings = not Addon.db.global.Class.Paladin.EnableBlessings; Addon:UpdateBuffs(); end,
+					checked = function() return Addon.db.global.Class.Paladin.EnableBlessings; end,
+					isNotRadio = true,
+				},
+				{
+					text = "Don't suggest buffs or targets (only remind)",
+					func = function() Addon.db.global.Class.Paladin.OnlyRemind = not Addon.db.global.Class.Paladin.OnlyRemind; Addon:UpdateBuffs(); end,
+					checked = function() return Addon.db.global.Class.Paladin.OnlyRemind; end,
+					isNotRadio = true,
+				},
+			},
+		},
 		["MAGE"]	= {
 			text = "Mage Options",
 			hasArrow = true,
@@ -263,7 +276,7 @@ function Addon:GetClassOptions()
 					text = "Mage Options", isTitle = true, notCheckable = true,
 				},
 				{
-					text = "Alert about Arcane Familiar",
+					text = "Remind about Arcane Familiar",
 					func = function() Addon.db.global.Class.Mage.EnableArcaneFamiliar = not Addon.db.global.Class.Mage.EnableArcaneFamiliar; Addon:UpdateBuffs(); end,
 					checked = function() return Addon.db.global.Class.Mage.EnableArcaneFamiliar; end,
 					isNotRadio = true,
