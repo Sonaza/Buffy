@@ -40,25 +40,12 @@ function Addon:SlashHandler(message)
 	elseif(action == "unlock") then
 		self.IsFrameLocked = false;
 		Addon:UpdateBuffs();
-	elseif(action == "announce") then
-		local extended, channel = false, nil;
-		
-		if(param1 == "players") then
-			extended = true;
-			channel = param2;
-		else
-			channel = param1;
-		end
-		
-		Addon:AnnounceBuffStatus(extended, channel);
 	elseif(action == "help" or action == "halp" or action == "?") then
 		Addon:AddChatMessage("Chat Command Usage");
 		Addon:AddChatMessage("Available by typing /bf or /buffy");
 		Addon:AddChatMessage("|cffffdc3b/buffy|r \124 Opens Options Menu Dialog");
 		Addon:AddChatMessage("|cffffdc3b/buffy|r toggle \124 Toggles Buffy Notifications");
 		Addon:AddChatMessage("|cffffdc3b/buffy|r lock and |cffffdc3b/buffy|r unlock \124 Lock/Unlock Frame");
-		Addon:AddChatMessage("|cffffdc3b/buffy|r announce |cffbbbbbb[self/party/raid]|r \124 Announce Raid Buff Status, [self/party/raid] Optional Announcement Channel");
-		Addon:AddChatMessage("|cffffdc3b/buffy|r announce players |cffbbbbbb[self/party/raid]|r \124 Announce Players Missing Buffs, [self/party/raid] Optional Announcement Channel");
 	end
 end
 

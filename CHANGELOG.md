@@ -2,6 +2,7 @@
 * Added support for Paladin blessings. The addon attempts to give buffs with priority on player and grouped tanks. If you wish only to be reminded instead you can enable that in the Paladin options.
 * Added font support for non-latin alphabet.
 * Fixed bug with food alerts.
+* Removed announce from slash commands.
 
 ## 2.0.2
 * Disabled Pepe alert in PVP. You'll have to use the whiste by yourself if you want to continue battling with him.
