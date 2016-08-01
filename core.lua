@@ -677,25 +677,40 @@ function Addon:ScanExclusiveBuffList(bufflist)
 	return partyBuffs;
 end
 
+-- Buffy:UnitMissingSomeBuff({ 203528, 203538, 203539 })
+function Addon:UnitMissingSomeBuff(unit, bufflist)
+	if(not bufflist or type(bufflist) ~= "table") then return nil end
+	
+	for index, spell in ipairs(bufflist) do
+		local hasBuff = Addon:UnitHasBuff(unit, spell);
+		if(not hasBuff) then return true, spell, index end
+	end
+	
+	return false;
+end
+
+-- Buffy:ScanMissingPartyBuffsByRole({["DAMAGER"]= { 203528, 203538, 203539 },["TANK"]= { 203538, 203539, 203528 },["HEALER"]= { 203538, 203539, 203528 },["NONE"]= { 203538, 203528, 203539 },})
 -- Buffy:ScanMissingPartyBuffsByRole({ 203528, 203538, 203539 })
 function Addon:ScanMissingPartyBuffsByRole(bufflist)
 	if(not bufflist or type(bufflist) ~= "table") then return nil end
 	
 	local missingBuffs = {};
 	
-	for _, spell in ipairs(bufflist) do
-		if(not spell) then return nil end
-		
-		for index, unit in GroupIterator() do
+	for index, unit in GroupIterator() do
+		if(Addon:UnitInRange(unit)) then
 			local unitRole = UnitGroupRolesAssigned(unit);
 			
-			missingBuffs[unitRole]       = missingBuffs[unitRole] or {};
-			missingBuffs[unitRole][unit] = missingBuffs[unitRole][unit] or {};
-			
-			local hasBuff = Addon:UnitHasBuff(unit, spell);
-			
-			if(not hasBuff) then
-				tinsert(missingBuffs[unitRole][unit], spell);
+			for _, spell in ipairs(bufflist[unitRole]) do
+				if(not spell) then return nil end
+				
+				local hasBuff = Addon:UnitHasBuff(unit, spell);
+				
+				if(not hasBuff) then
+					missingBuffs[unitRole]       = missingBuffs[unitRole] or {};
+					missingBuffs[unitRole][unit] = missingBuffs[unitRole][unit] or {};
+					
+					tinsert(missingBuffs[unitRole][unit], spell);
+				end
 			end
 		end
 	end

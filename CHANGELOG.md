@@ -1,3 +1,6 @@
+## 2.0.5
+* Paladin blessing reprioritization. It didn't really work before.
+
 ## 2.0.4
 * Fixed incorrect font path. Oops.
 

@@ -177,59 +177,48 @@ local CLASS_CASTABLE_BUFFS = {
 									spell = self.roleBuffs["DAMAGER"][1],
 									target = "player",
 								};
-							end
-							
-							local missingBuffs = Addon:ScanMissingPartyBuffsByRole(self.buffs);
-							local playerUnitID = Addon:GetPlayerUnitID();
-							
-							for role, units in pairs(missingBuffs) do
-								local sortedList = {};
-								for unit, buffs in pairs(units) do
-									if(Addon:UnitInRange(unit)) then
-										tinsert(sortedList, {
-											unit = unit,
-											buffs = buffs,
-										})
-									end
-								end
+							else
+								local missingBuffs = Addon:ScanMissingPartyBuffsByRole(self.roleBuffs);
+								local playerUnitID = Addon:GetPlayerUnitID();
 								
-								if(#sortedList > 1) then
-									table.sort(sortedList, function(a, b)
-										if(a == nil and b == nil) then return false end
-										if(a == nil) then return true end
-										if(b == nil) then return false end
-										
-										local ac = (a.unit == playerUnitID) and 1 or 0;
-										local bc = (b.unit == playerUnitID) and 1 or 0;
-										
-										return ac > bc;
-									end);
-								end
+								local buffPriorities = {};
 								
-								missingBuffs[role] = sortedList;
-							end
-							
-							for priority = 1, 3 do
-								for _, role in ipairs(self.roleOrder) do
+								for rolePriority, role in ipairs(self.roleOrder) do
 									if(missingBuffs[role]) then
-										local spell = self.roleBuffs[role][priority];
-										
-										for _s, missingBuffsData in ipairs(missingBuffs[role]) do
-											local unit = missingBuffsData.unit;
-											local isMissing = Addon:InArray(missingBuffsData.buffs, spell);
+										for unit, buffs in pairs(missingBuffs[role]) do
+											local spell = buffs[1];
+											local priority = #buffs;
 											
-											if(isMissing) then
-												buffToCast = {
-													spell = spell,
-													target = unit,
-												};
+											local totalPriority = priority * (5-rolePriority);
+											
+											if(unit == playerUnitID) then
+												totalPriority = totalPriority * 1.25;
 											end
 											
-											if(buffToCast) then break end
+											tinsert(buffPriorities, {
+												spell = spell,
+												target = unit,
+												priority = totalPriority,
+											});
 										end
 									end
+								end
+								
+								table.sort(buffPriorities, function(a, b)
+									if(a == nil and b == nil) then return false end
+									if(a == nil) then return true end
+									if(b == nil) then return false end
 									
-									if(buffToCast) then break end
+									return a.priority > b.priority;
+								end);
+								
+								ASDASD = buffPriorities;
+								
+								if(buffPriorities[1]) then
+									buffToCast = {
+										spell = buffPriorities[1].spell,
+										target = buffPriorities[1].target,
+									};
 								end
 							end
 						end
