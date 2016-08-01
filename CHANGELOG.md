@@ -1,3 +1,6 @@
+## 2.0.4
+* Fixed incorrect font path. Oops.
+
 ## 2.0.3
 * Added support for Paladin blessings. The addon attempts to give buffs with priority on player and grouped tanks. If you wish only to be reminded instead you can enable that in the Paladin options.
 * Added font support for non-latin alphabet.

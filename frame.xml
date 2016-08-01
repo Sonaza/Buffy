@@ -3,7 +3,7 @@
 
 	<FontFamily name="BuffyFontFamily" virtual="true">
 		<Member alphabet="roman">
-			<Font font="Interface\AddOns\!Vendorer\media\DORISPP.TTF" height="10" outline="NORMAL"/>
+			<Font font="Interface\AddOns\Buffy\Media\DORISPP.TTF" height="10" outline="NORMAL"/>
 		</Member>
 		<Member alphabet="korean">
 			<Font font="Fonts\2002.TTF" height="11" outline="NORMAL"/>
@@ -33,7 +33,7 @@
 
 	<FontFamily name="BuffyBigFontFamily" virtual="true">
 		<Member alphabet="roman">
-			<Font font="Interface\AddOns\!Vendorer\media\DORISPP.TTF" height="16" outline="NORMAL"/>
+			<Font font="Interface\AddOns\Buffy\Media\DORISPP.TTF" height="16" outline="NORMAL"/>
 		</Member>
 		<Member alphabet="korean">
 			<Font font="Fonts\2002.TTF" height="16" outline="NORMAL"/>
