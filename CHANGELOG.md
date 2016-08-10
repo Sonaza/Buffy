@@ -1,3 +1,6 @@
+## 2.0.6
+* Fixed data error on Demon Hunters.
+
 ## 2.0.5
 * Paladin blessing reprioritization. It didn't really work before.
 

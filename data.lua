@@ -142,10 +142,14 @@ local CLASS_CASTABLE_BUFFS = {
 					},
 					roleOrder = { "TANK", "DAMAGER", "HEALER", "NONE" },
 					buffsRemaining = 1337,
+					getNumBlessings = function()
+						-- Pally gains blessings on 42, 44 an 46
+						return math.min(3, (UnitLevel("player") - 40) / 2);
+					end,
 				},
 				bufflist = function(self)
 					local buffStatus = Addon:ScanExclusiveBuffList(self.buffs);
-					local buffsRemaining = 3 - #buffStatus["player"];
+					local buffsRemaining = self.getNumBlessings() - #buffStatus["player"];
 					
 					self.buffsRemaining = buffsRemaining;
 					
@@ -432,6 +436,9 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 	},
 	["HUNTER"] = {
+		
+	},
+	["DEMONHUNTER"] = {
 		
 	},
 };
