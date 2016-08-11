@@ -526,7 +526,7 @@ BUFFY_CONSUMABLES = {
 
 BUFFY_ITEM_SPELLS = {};
 
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.STAT.AGILITY, 		{ 109153, 109145, 118922, 86569 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.STAT.AGILITY, 		{ 109153, 109145, 129192, 118922, 86569 });
 Addon:AddItemSpell(109153, 156064); -- Greater Draenic Agility Flask
 Addon:AddItemSpell(109145, 156073); -- Draenic Agility Flask
 
@@ -538,12 +538,13 @@ Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.STAT.INTELLECT, 	{ 109155, 10914
 Addon:AddItemSpell(109155, 156079); -- Greater Draenic Intellect Flask
 Addon:AddItemSpell(109147, 156070); -- Draenic Intellect Flask
 
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.STAT.STAMINA, 		{ 109160, 109152 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.STAT.STAMINA, 		{ 109160, 109152, 129192 });
 Addon:AddItemSpell(109160, 156084); -- Greater Draenic Stamina Flask
 Addon:AddItemSpell(109152, 156077); -- Draenic Stamina Flask
 
 Addon:AddItemSpell(118922, 176151); -- Oralius' Crystal
 Addon:AddItemSpell(86569,  127230); -- Crystal of Insanity
+Addon:AddItemSpell(129192, 193456); -- Inquisitor's Menacing Eye
 
 -- Non-consumable runes are listed first
 Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.STAT.AGILITY, 		{ 128482, 128475, 118630 });

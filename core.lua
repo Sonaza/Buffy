@@ -523,7 +523,7 @@ function Addon:IsPlayerInLFR()
 end
 
 function Addon:FlaskIsNonConsumable(itemID)
-	return (itemID == 118922 or itemID == 86569);
+	return itemID == 118922 or itemID == 86569 or itemID == 129192;
 end
 
 function Addon:FindBestConsumableItem(consumable_type, preferredStat)

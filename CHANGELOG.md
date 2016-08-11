@@ -1,3 +1,6 @@
+## 2.0.7
+* Added support for Inquisitor's Menacing Eye.
+
 ## 2.0.6
 * Fixed data error on Demon Hunters.
 
