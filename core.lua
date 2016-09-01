@@ -51,11 +51,12 @@ end
 
 ----------------------------------------------------------
 
-function Addon:AddBuffItems(item_table, stat_type, items)
+function Addon:AddBuffItems(item_table, expansion, stat_type, items)
 	if(not item_table or type(item_table) ~= "table") then return end
 	if(not items or not stat_type) then return end
 	
-	item_table[stat_type] = items;
+	item_table[expansion] = item_table[expansion] or {};
+	item_table[expansion][stat_type] = items;
 end
 
 function Addon:AddItemSpell(item, spell)
@@ -83,7 +84,14 @@ function Addon:GetFoodPreference(skip_custom)
 		return a.rating > b.rating;
 	end);
 	
-	local customFood = self.db.char.FoodPriority[GetSpecialization()];
+	local specIndex = GetSpecialization();
+	
+	-- Reset player selection of stamina food because there is no stamina food anymore
+	if(UnitLevel("player") >= 110 and self.db.char.FoodPriority[specIndex] == LE.STAT.STAMINA) then
+		self.db.char.FoodPriority[specIndex] = LE.STAT.AUTOMATIC;
+	end
+	
+	local customFood = self.db.char.FoodPriority[specIndex];
 	
 	local sorted = {};
 	
@@ -92,7 +100,7 @@ function Addon:GetFoodPreference(skip_custom)
 	end
 	
 	-- Stam food for tanks?
-	if(Addon:PlayerInTankSpec() and not self.db.global.ConsumablesRemind.SkipStamina and (skip_custom or customFood ~= LE.STAT.STAMINA)) then
+	if(UnitLevel("player") < 109 and Addon:PlayerInTankSpec() and not self.db.global.ConsumablesRemind.SkipStamina and (skip_custom or customFood ~= LE.STAT.STAMINA)) then
 		tinsert(sorted, LE.STAT.STAMINA);
 	end
 	
@@ -105,14 +113,27 @@ function Addon:GetFoodPreference(skip_custom)
 	return sorted;
 end
 
+local function GetSpellName(spell)
+	local name = GetSpellInfo(spell);
+	return name;
+end
+
 function Addon:IsPlayerEating()
 	-- Find localized name for the eating food buff, there are too many buff ids to manually check
-	local localizedFood = GetSpellInfo(33264);
-	local name, _, icon, _, _, duration, expirationTime, _, _, _, spellId = UnitBuff("player", localizedFood);
+	local localizedFoods = {
+		GetSpellName(33264),
+		GetSpellName(192002),
+	};
 	
-	if(name) then
-		return true, duration - (expirationTime - GetTime()), spellId;
+	for _, localizedFood in ipairs(localizedFoods) do
+		local name, _, icon, _, _, duration, expirationTime, _, _, _, spellId = UnitBuff("player", localizedFood);
+		
+		if(name) then
+			return true, duration - (expirationTime - GetTime()), spellId;
+		end
 	end
+	
+	return false;
 end
 
 function Addon:IsPlayerWellFed()
@@ -454,15 +475,76 @@ function Addon:WillBuffExpireSoon(remaining)
 	return remaining > 0 and remaining <= self.db.global.ExpirationAlertThreshold;
 end
 
+function Addon:GetConsumableCategories()
+	local categories = {};
+	
+	local level = UnitLevel("player");
+	
+	if(level > 100) then
+		tinsert(categories, LE.CONSUMABLE_CATEGORY.LEGION);
+	end
+	
+	if(level <= 100 or self.db.global.ConsumablesRemind.OutdatedConsumables) then
+		tinsert(categories, LE.CONSUMABLE_CATEGORY.DRAENOR);
+	end
+	
+	tinsert(categories, LE.CONSUMABLE_CATEGORY.GENERIC);
+	
+	return categories;
+end
+
+function Addon:GetConsumableExpansionLevel()
+	local level = UnitLevel("player");
+	if(level > 100) then
+		return LE.CONSUMABLE_CATEGORY.LEGION;
+	end
+	
+	return LE.CONSUMABLE_CATEGORY.DRAENOR;
+end
+
+function Addon:GetConsumablesTable(tableName, categories)
+	if(not tableName or not BUFFY_CONSUMABLES[tableName]) then
+		error("Addon:GetConsumablesTable(tableName, categories): Invalid table name", 2);
+		return nil;
+	end
+	
+	if(type(categories) ~= "table" and type(categories) ~= "number") then
+		error("Addon:GetConsumablesTable(tableName, categories): Invalid category, must be a number or a table", 2);
+		return nil;
+	end
+	
+	local result = {};
+	
+	if(type(categories) == "number") then
+		categories = { categories };
+	end
+	
+	for _, category in ipairs(categories) do
+		if(BUFFY_CONSUMABLES[tableName][category]) then
+			for subcategory, consumables in pairs(BUFFY_CONSUMABLES[tableName][category]) do
+				result[subcategory] = result[subcategory] or {};
+				
+				for _, item in ipairs(consumables) do
+					tinsert(result[subcategory], item);
+				end
+			end
+		end
+	end
+	
+	return result;
+end
+
 function Addon:PlayerHasConsumableBuff(consumable_type, preferredStat)
 	local hasBuff, consumableID, buffExpiring;
 	
 	local consumablesList = nil;
 	
 	if(consumable_type == LE.CONSUMABLE_FLASK) then
-		consumablesList = BUFFY_CONSUMABLES.FLASKS;
+		local categories = Addon:GetConsumableCategories();
+		consumablesList = Addon:GetConsumablesTable("FLASKS", categories);
 	elseif(consumable_type == LE.CONSUMABLE_RUNE) then
-		consumablesList = BUFFY_CONSUMABLES.RUNES;
+		-- Only browse draenor list for runes since no runes in legion
+		consumablesList = Addon:GetConsumablesTable("RUNES", LE.CONSUMABLE_CATEGORY.DRAENOR);
 	end
 	
 	if(consumablesList ~= nil and type(consumablesList) == "table") then
@@ -481,7 +563,9 @@ end
 local INSTANCETYPE_RAID 	= 0x1;
 local INSTANCETYPE_DUNGEON 	= 0x2;
 
-function Addon:PlayerInValidDraenorInstance(includeDungeons, includeLFR)
+function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR)
+	local expansionLevel = expansionLevel or LE.CONSUMABLE_CATEGORY.LEGION;
+	
 	local includeDungeons = includeDungeons or false;
 	if(includeDungeons == nil) then includeDungeons = false end
 	
@@ -494,18 +578,31 @@ function Addon:PlayerInValidDraenorInstance(includeDungeons, includeLFR)
 	if(not includeLFR and (difficultyID == 7 or difficultyID == 17)) then return false end
 	
 	local instanceMapIDs = {
-		[1228] = INSTANCETYPE_RAID, -- Highmaul
-		[1205] = INSTANCETYPE_RAID, -- Blackrock Foundry
-		[1448] = INSTANCETYPE_RAID, -- Hellfire Citadel
+		[LE.CONSUMABLE_CATEGORY.DRAENOR] = {
+			[1228] = INSTANCETYPE_RAID, -- Highmaul
+			[1205] = INSTANCETYPE_RAID, -- Blackrock Foundry
+			[1448] = INSTANCETYPE_RAID, -- Hellfire Citadel
+			
+			[1182] = INSTANCETYPE_DUNGEON, -- Auchindoun
+			[1175] = INSTANCETYPE_DUNGEON, -- Bloodmaul Slag Mines
+			[1208] = INSTANCETYPE_DUNGEON, -- Grimrail Depot
+			[1195] = INSTANCETYPE_DUNGEON, -- Iron Docks
+			[1176] = INSTANCETYPE_DUNGEON, -- Shadowmoon Burial Grounds
+			[1209] = INSTANCETYPE_DUNGEON, -- Skyreach
+			[1279] = INSTANCETYPE_DUNGEON, -- The Everbloom
+			[1358] = INSTANCETYPE_DUNGEON, -- Upper Blackrock Spire
+		},
 		
-		[1182] = INSTANCETYPE_DUNGEON, -- Auchindoun
-		[1175] = INSTANCETYPE_DUNGEON, -- Bloodmaul Slag Mines
-		[1208] = INSTANCETYPE_DUNGEON, -- Grimrail Depot
-		[1195] = INSTANCETYPE_DUNGEON, -- Iron Docks
-		[1176] = INSTANCETYPE_DUNGEON, -- Shadowmoon Burial Grounds
-		[1209] = INSTANCETYPE_DUNGEON, -- Skyreach
-		[1279] = INSTANCETYPE_DUNGEON, -- The Everbloom
-		[1358] = INSTANCETYPE_DUNGEON, -- Upper Blackrock Spire
+		[LE.CONSUMABLE_CATEGORY.LEGION] = {
+			[1094] = INSTANCETYPE_RAID, -- The Emerald Nightmare
+			[1205] = INSTANCETYPE_RAID, -- The Nighthold
+			
+			[1456] = INSTANCETYPE_DUNGEON, -- Eye of Azshara
+			[1457] = INSTANCETYPE_DUNGEON, -- 
+			[1458] = INSTANCETYPE_DUNGEON, -- Neltharion's Lair
+			
+		},
+		
 	};
 	
 	if(instanceMapIDs[mapID] ~= nil) then
@@ -529,12 +626,14 @@ end
 function Addon:FindBestConsumableItem(consumable_type, preferredStat)
 	local consumablesList = nil;
 	
+	local categories = Addon:GetConsumableCategories();
+	
 	if(consumable_type == LE.CONSUMABLE_FLASK) then
-		consumablesList = BUFFY_CONSUMABLES.FLASKS;
+		consumablesList = Addon:GetConsumablesTable("FLASKS", categories);
 	elseif(consumable_type == LE.CONSUMABLE_RUNE) then
-		consumablesList = BUFFY_CONSUMABLES.RUNES;
+		consumablesList = Addon:GetConsumablesTable("RUNES", LE.CONSUMABLE_CATEGORY.DRAENOR);
 	elseif(consumable_type == LE.CONSUMABLE_FOOD) then
-		consumablesList = BUFFY_CONSUMABLES.FOODS;
+		consumablesList = Addon:GetConsumablesTable("FOODS", categories);
 	end
 	
 	if(consumablesList ~= nil and type(consumablesList) == "table") then
@@ -572,7 +671,9 @@ function Addon:COMBAT_LOG_EVENT_UNFILTERED(_, timestamp, event, hideCaster, sour
 	if(event == "SPELL_CREATE" and Addon:IsUnitInParty(sourceName)) then
 		local spellId, spellName, spellSchool = ...;
 		
-		if(BUFFY_CONSUMABLES.FEASTS[spellId] ~= nil) then
+		local expansionLevel = Addon:GetConsumableExpansionLevel();
+		
+		if(BUFFY_CONSUMABLES.FEASTS[expansionLevel][spellId] ~= nil) then
 			local x, y, _, instance = UnitPosition(sourceName);
 			
 			Addon.SummonedFeasts[spellId] = {
@@ -854,7 +955,8 @@ function Addon:UpdateBuffs(forceUpdate)
 			inValidInstance = true;
 		else
 			local enableDungeons = self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.RAIDS_AND_DUNGEONS;
-			inValidInstance = Addon:PlayerInValidDraenorInstance(enableDungeons, not self.db.global.ConsumablesRemind.DisableInLFR);
+			local expansionLevel = Addon:GetConsumableExpansionLevel();
+			inValidInstance = Addon:PlayerInValidInstance(expansionlevel, enableDungeons, not self.db.global.ConsumablesRemind.DisableInLFR);
 		end
 		
 		if(self.db.global.ConsumablesRemind.DisableInLFR and Addon:IsPlayerInLFR()) then
@@ -865,6 +967,8 @@ function Addon:UpdateBuffs(forceUpdate)
 		
 		if(inValidInstance and inValidGroup) then
 			local preferredStats = Addon:GetStatPreference(PLAYER_CLASS, PLAYER_SPEC);
+			
+			local expansionLevel = Addon:GetConsumableExpansionLevel();
 			
 			if(self.db.global.ConsumablesRemind.Flasks) then
 				-- Loop through preferred stat types
@@ -980,12 +1084,12 @@ function Addon:UpdateBuffs(forceUpdate)
 					if(Addon:IsFeastUp() and PLAYER_LEVEL >= 91) then
 						local sorted_feasts = {};
 						for spell, data in pairs(Addon.SummonedFeasts) do
-							local tableExpires = (data.time + BUFFY_CONSUMABLES.FEASTS[spell].duration) - GetTime();
+							local tableExpires = (data.time + BUFFY_CONSUMABLES.FEASTS[expansionLevel][spell].duration) - GetTime();
 							
 							if(tableExpires > 0) then
 								local feastRange = Addon:GetPlayerDistanceToPoint(data.instance, data.position.x, data.position.y);
 								if(feastRange and feastRange <= 75) then
-									tinsert(sorted_feasts, { spell = spell, stats = BUFFY_CONSUMABLES.FEASTS[spell].stats, range = feastRange, });
+									tinsert(sorted_feasts, { spell = spell, stats = BUFFY_CONSUMABLES.FEASTS[expansionLevel][spell].stats, range = feastRange, });
 								end
 							else
 								Addon.SummonedFeasts[spell] = nil;
@@ -1005,7 +1109,7 @@ function Addon:UpdateBuffs(forceUpdate)
 							-- local range = sorted_feasts[1].range;
 							
 							local feast = Addon.SummonedFeasts[spellId];
-							local data = BUFFY_CONSUMABLES.FEASTS[spellId];
+							local data = BUFFY_CONSUMABLES.FEASTS[expansionLevel][spellId];
 							
 							local tableExpires = (feast.time + data.duration) - GetTime();
 							
@@ -1199,8 +1303,8 @@ function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 	local secondaryText = Addon:GetMultiValue(data.secondary, vars);
 	local priorityIcon = Addon:GetMultiValue(data.icon, vars);
 	
-	local noCast = Addon:GetMultiValue(data.noCast, vars);
-	if(not InCombatLockdown() and noCast) then
+	local noCast = Addon:GetMultiValue(data.noCast, vars) or false;
+	if(not InCombatLockdown()) then
 		Addon:ClearTempBind();
 	end
 	
@@ -1233,7 +1337,10 @@ function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 			id = realSpellID,
 		};
 		
+		-- print("Spell", name, data.target)
+		
 		if(not InCombatLockdown() and not noCast) then
+			-- print("Setting bind")
 			Addon:SetTempBind("spell", name, data.target);
 		end
 		
@@ -1375,6 +1482,8 @@ function Addon:HideBuffyAlert()
 		
 		BuffyFrame.fadeout:Play();
 	end
+	
+	Addon.LastTempBind = nil;
 end
 
 function Addon:PlayerInInstance()
@@ -1486,15 +1595,11 @@ function Addon:SetTempBind(bindType, name, target)
 			BuffySpellButtonFrame:SetAttribute(bindType .. "1", name);
 		end
 		
-		if(not target) then
-			BuffySpellButtonFrame:SetAttribute("unit1", "player");
-		else
-			BuffySpellButtonFrame:SetAttribute("unit1", target);
-		end
+		BuffySpellButtonFrame:SetAttribute("unit1", target or "player");
 		
 		SetOverrideBindingClick(BuffyFrame, true, key, "BuffySpellButtonFrame", "LeftButton");
 		
-		Addon.LastTempBind = {bindType, name, target};
+		Addon.LastTempBind = { bindType, name, target };
 	end
 end
 

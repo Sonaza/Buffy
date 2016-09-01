@@ -1,3 +1,10 @@
+## 2.1.0
+* Added support for Legion consumable food, flasks and feasts.
+* Attempted fix for the error that causes Buffy keybind to sometimes recast the previous spell.
+* Disabled Paladin Retribution blessing alerts while in combat since they can only be cast while out of combat anyway.
+* Added option to self cast Paladin blessings even while in group.
+* Fixed eating alert for new foods.
+
 ## 2.0.7
 * Added support for Inquisitor's Menacing Eye.
 

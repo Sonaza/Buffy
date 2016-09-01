@@ -21,9 +21,9 @@ LE.FEASTS_MODE = {
 }
 
 LE.RAID_CONSUMABLES = {
-	RAIDS_ONLY 			= 1,
-	RAIDS_AND_DUNGEONS	= 2,
-	EVERYWHERE 			= 3,
+	RAIDS_ONLY 					= 1,
+	RAIDS_AND_DUNGEONS			= 2,
+	EVERYWHERE 					= 3,
 };
 
 function Addon:SlashHandler(message)
@@ -55,6 +55,8 @@ function Addon:InitializeDatabase()
 			FoodPriority = {
 				[1] = LE.STAT.AUTOMATIC,
 				[2] = LE.STAT.AUTOMATIC,
+				[3] = LE.STAT.AUTOMATIC,
+				[4] = LE.STAT.AUTOMATIC,
 			},
 		},
 		global = {
@@ -106,6 +108,8 @@ function Addon:InitializeDatabase()
 				SkipStamina = true,
 				KeybindEnabled = false,
 				NotInCombat = true,
+				
+				OutdatedConsumables = true,
 			},
 			
 			Class = {
@@ -129,6 +133,7 @@ function Addon:InitializeDatabase()
 				Paladin = {
 					EnableBlessings = true,
 					OnlyRemind = false,
+					SelfCastBlessings = false,
 				},
 				Druid = {
 					FormAlert = true,
@@ -247,7 +252,13 @@ function Addon:GetClassOptions()
 					isNotRadio = true,
 				},
 				{
-					text = "Don't suggest buffs or targets (only remind)",
+					text = "Only self cast Blessings even while in group",
+					func = function() Addon.db.global.Class.Paladin.SelfCastBlessings = not Addon.db.global.Class.Paladin.SelfCastBlessings; Addon:UpdateBuffs(); end,
+					checked = function() return Addon.db.global.Class.Paladin.SelfCastBlessings; end,
+					isNotRadio = true,
+				},
+				{
+					text = "Don't suggest buff spell or targets (only remind)",
 					func = function() Addon.db.global.Class.Paladin.OnlyRemind = not Addon.db.global.Class.Paladin.OnlyRemind; Addon:UpdateBuffs(); end,
 					checked = function() return Addon.db.global.Class.Paladin.OnlyRemind; end,
 					isNotRadio = true,
@@ -408,13 +419,13 @@ function Addon:GetCustomFoodStatPriorityMenu()
 				checked = function() return self.db.char.FoodPriority[specIndex] == LE.STAT.VERSATILITY; end,
 			},
 			{
-				text = "Felmouth Frenzy",
+				text = "Special food (Felmouth Frenzy/Pepper Breath)",
 				func = function() self.db.char.FoodPriority[specIndex] = LE.STAT.FELMOUTH; Addon:UpdateBuffs(); end,
 				checked = function() return self.db.char.FoodPriority[specIndex] == LE.STAT.FELMOUTH; end,
 			},
 		});
 		
-		if(role == "TANK") then
+		if(role == "TANK" and UnitLevel("player") < 110) then
 			tinsert(menu, {
 				text = LE.RATING_NAMES[LE.STAT.STAMINA],
 				func = function() self.db.char.FoodPriority[specIndex] = LE.STAT.STAMINA; Addon:UpdateBuffs(); end,
@@ -555,14 +566,20 @@ function Addon:GetDatabrokerMenuData()
 					text = "Consumables Remind", isTitle = true, notCheckable = true,
 				},
 				{
-					text = "Enable in Draenor raids",
+					text = "Enable in current raids",
 					func = function() self.db.global.ConsumablesRemind.Mode = LE.RAID_CONSUMABLES.RAIDS_ONLY; Addon:UpdateBuffs(); CloseMenus(); end,
 					checked = function() return self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.RAIDS_ONLY; end,
+					tooltipTitle = "Enable in current raids",
+					tooltipText = "Consumable alerts will be enabled in current content according to your level.|n|nNote: only Legion and Draenor consumables are supported.",
+					tooltipOnButton = 1,
 				},
 				{
-					text = "Enable in Draenor raids and dungeons",
+					text = "Enable in current raids and dungeons",
 					func = function() self.db.global.ConsumablesRemind.Mode = LE.RAID_CONSUMABLES.RAIDS_AND_DUNGEONS; Addon:UpdateBuffs(); CloseMenus(); end,
 					checked = function() return self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.RAIDS_AND_DUNGEONS; end,
+					tooltipTitle = "Enable in current raids and dungeons",
+					tooltipText = "Consumable alerts will be enabled in current content according to your level.|n|nNote: only Legion and Draenor consumables are supported.",
+					tooltipOnButton = 1,
 				},
 				{
 					text = "Enable everywhere",
@@ -591,7 +608,7 @@ function Addon:GetDatabrokerMenuData()
 					},
 				},
 				{
-					text = "Enable for augment runes",
+					text = ("Enable for augment runes %s"):format(UnitLevel("player") > 109 and "(disabled)" or ""),
 					func = function() self.db.global.ConsumablesRemind.Runes = not self.db.global.ConsumablesRemind.Runes; Addon:UpdateBuffs(); CloseMenus(); end,
 					checked = function() return self.db.global.ConsumablesRemind.Runes; end,
 					isNotRadio = true,
@@ -604,6 +621,7 @@ function Addon:GetDatabrokerMenuData()
 							isNotRadio = true,
 						},
 					},
+					disabled = UnitLevel("player") > 109,
 				},
 				{
 					text = "Enable for food",
@@ -675,6 +693,12 @@ function Addon:GetDatabrokerMenuData()
 					text = "Also enable keybind for consumables",
 					func = function() self.db.global.ConsumablesRemind.KeybindEnabled = not self.db.global.ConsumablesRemind.KeybindEnabled; Addon:ClearTempBind(); Addon:UpdateBuffs(); CloseMenus(); end,
 					checked = function() return self.db.global.ConsumablesRemind.KeybindEnabled; end,
+					isNotRadio = true,
+				},
+				{
+					text = "Allow outdated consumables",
+					func = function() self.db.global.ConsumablesRemind.OutdatedConsumables = not self.db.global.ConsumablesRemind.OutdatedConsumables; Addon:UpdateBuffs(); CloseMenus(); end,
+					checked = function() return self.db.global.ConsumablesRemind.OutdatedConsumables; end,
 					isNotRadio = true,
 				},
 			},

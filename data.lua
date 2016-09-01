@@ -14,6 +14,12 @@ BUFFY_TEMPORARY_BIND_TEXT	= "Buffy will set a temporary binding when required an
 BUFFY_CANCEL_BINDING_TEXT 	= "Press Escape to Cancel";
 BUFFY_ACCEPT_TEXT			= "Save"
 
+LE.CONSUMABLE_CATEGORY = {
+	GENERIC     = 0,
+	DRAENOR     = 5,
+	LEGION      = 6,
+};
+
 -- Enums
 LE.STAT = {
 	AGILITY 	= 0x001,
@@ -162,7 +168,7 @@ local CLASS_CASTABLE_BUFFS = {
 						
 						local buffToCast = nil;
 						
-						if(isSolo) then
+						if(isSolo or Addon.db.global.Class.Paladin.SelfCastBlessings) then
 							for _, spell in ipairs(self.buffs) do
 								local hasBuff = Addon:UnitHasBuff("player", spell);
 								if(not hasBuff) then
@@ -236,7 +242,7 @@ local CLASS_CASTABLE_BUFFS = {
 					return false;
 				end,
 				condition = function(self)
-					return Addon.db.global.Class.Paladin.EnableBlessings;
+					return Addon.db.global.Class.Paladin.EnableBlessings and not InCombatLockdown();
 				end,
 				description = function(self)
 					return string.format("Missing %d blessing%s", self.buffsRemaining, self.buffsRemaining == 1 and "" or "s");
@@ -526,58 +532,109 @@ BUFFY_CONSUMABLES = {
 
 BUFFY_ITEM_SPELLS = {};
 
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.STAT.AGILITY, 		{ 109153, 109145, 129192, 118922, 86569 });
-Addon:AddItemSpell(109153, 156064); -- Greater Draenic Agility Flask
-Addon:AddItemSpell(109145, 156073); -- Draenic Agility Flask
+-------------------------------
+-- Generic consumables
 
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.STAT.STRENGTH,		{ 109156, 109148, 118922, 86569 });
-Addon:AddItemSpell(109156, 156080); -- Greater Draenic Strength Flask
-Addon:AddItemSpell(109148, 156071); -- Draenic Strength Flask
-
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.STAT.INTELLECT, 	{ 109155, 109147, 118922, 86569 });
-Addon:AddItemSpell(109155, 156079); -- Greater Draenic Intellect Flask
-Addon:AddItemSpell(109147, 156070); -- Draenic Intellect Flask
-
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.STAT.STAMINA, 		{ 109160, 109152, 129192 });
-Addon:AddItemSpell(109160, 156084); -- Greater Draenic Stamina Flask
-Addon:AddItemSpell(109152, 156077); -- Draenic Stamina Flask
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.AGILITY, 		{ 129192, 118922, 86569 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.STRENGTH, 		{ 118922, 86569 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.INTELLECT, 	{ 118922, 86569 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.STAMINA, 		{ 129192, 118922, });
 
 Addon:AddItemSpell(118922, 176151); -- Oralius' Crystal
 Addon:AddItemSpell(86569,  127230); -- Crystal of Insanity
 Addon:AddItemSpell(129192, 193456); -- Inquisitor's Menacing Eye
 
+-------------------------------
+-- Draenor consumables
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.AGILITY, 		{ 109153, 109145, });
+Addon:AddItemSpell(109153, 156064); -- Greater Draenic Agility Flask
+Addon:AddItemSpell(109145, 156073); -- Draenic Agility Flask
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.STRENGTH,		{ 109156, 109148, });
+Addon:AddItemSpell(109156, 156080); -- Greater Draenic Strength Flask
+Addon:AddItemSpell(109148, 156071); -- Draenic Strength Flask
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.INTELLECT, 	{ 109155, 109147, });
+Addon:AddItemSpell(109155, 156079); -- Greater Draenic Intellect Flask
+Addon:AddItemSpell(109147, 156070); -- Draenic Intellect Flask
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.STAMINA, 		{ 109160, 109152, });
+Addon:AddItemSpell(109160, 156084); -- Greater Draenic Stamina Flask
+Addon:AddItemSpell(109152, 156077); -- Draenic Stamina Flask
+
 -- Non-consumable runes are listed first
-Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.STAT.AGILITY, 		{ 128482, 128475, 118630 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.AGILITY, 		{ 128482, 128475, 118630 });
 Addon:AddItemSpell(118630, 175456);
 
-Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.STAT.STRENGTH,		{ 128482, 128475, 118631 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.STRENGTH,		{ 128482, 128475, 118631 });
 Addon:AddItemSpell(118631, 175439);
 
-Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.STAT.INTELLECT,		{ 128482, 128475, 118632 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.INTELLECT,		{ 128482, 128475, 118632 });
 Addon:AddItemSpell(118632, 175457);
 
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.STAT.HASTE, 			{ 122348, 111450, 118428, 111434, 111442, });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.STAT.MASTERY, 		{ 122343, 111452, 118428, 111436, 111444, });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.STAT.CRIT,			{ 122345, 111449, 118428, 111433, 111441, });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.STAT.VERSATILITY, 	{ 122346, 111454, 118428, 111438, 111446, });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.STAT.STAMINA, 		{ 122347, 111447, 111431, 111439, });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.STAT.FELMOUTH,		{ 127991, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.HASTE, 			{ 122348, 111450, 118428, 111434, 111442, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.MASTERY, 		{ 122343, 111452, 118428, 111436, 111444, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.CRIT,			{ 122345, 111449, 118428, 111433, 111441, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.VERSATILITY, 	{ 122346, 111454, 118428, 111438, 111446, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.STAMINA, 		{ 122347, 111447, 111431, 111439, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.DRAENOR, LE.STAT.FELMOUTH,		{ 127991, });
+
+-------------------------------
+-- Legion consumables
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.AGILITY, 		{ 127858, 127848, });
+Addon:AddItemSpell(127848, 188033); -- Flask of the Seventh Demon
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.STRENGTH,		{ 127858, 127849, });
+Addon:AddItemSpell(127849, 188034); -- Flask of the Countless Armies
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.INTELLECT, 		{ 127858, 109147, });
+Addon:AddItemSpell(127847, 188031); -- Flask of the Whispered Pact
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.STAMINA, 		{ 127858, 127850, });
+Addon:AddItemSpell(127850, 188035); -- Flask of Ten Thousand Scars
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.HASTE, 			{ 133571, 133566, 133561, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.MASTERY, 		{ 133572, 133567, 133562, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.CRIT,			{ 133570, 133565, 133557, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.VERSATILITY, 	{ 133573, 133568, 133563, });
+-- Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.STAMINA, 		{  }); -- No stamina foods
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.FELMOUTH,		{ 133574, 133569, 133564, }); -- Pepper Breath foods
+
+-------------------------------
+-- Feasts
 
 BUFFY_CONSUMABLES.FEASTS = {
-	[175215] = { -- Savage Feast
-		item = 118576,
-		duration = 180,
-		stats = 100,
+	[LE.CONSUMABLE_CATEGORY.DRAENOR] = {
+		[175215] = { -- Savage Feast
+			item = 118576,
+			duration = 180,
+			stats = 100,
+		},
+		[160740] = { -- Feast of Waters
+			item = 111458,
+			duration = 180,
+			stats = 75,
+		},
+		[160740] = { -- Feast of Blood
+			item = 111457,
+			duration = 180,
+			stats = 75,
+		},
 	},
-	[160740] = { -- Feast of Waters
-		item = 111458,
-		duration = 180,
-		stats = 75,
-	},
-	[160740] = { -- Feast of Blood
-		item = 111457,
-		duration = 180,
-		stats = 75,
+	
+	[LE.CONSUMABLE_CATEGORY.LEGION] = {
+		[201352] = { -- Lavish Suramar Feast
+			item = 133579,
+			duration = 180,
+			stats = 200,
+		},
+		[201351] = { -- Hearty Feast
+			item = 133578,
+			duration = 180,
+			stats = 150,
+		},
 	},
 };
 
