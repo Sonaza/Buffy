@@ -58,6 +58,12 @@ function Addon:InitializeDatabase()
 				[3] = LE.STAT.AUTOMATIC,
 				[4] = LE.STAT.AUTOMATIC,
 			},
+			CustomFoods = {
+				[1] = nil,
+				[2] = nil,
+				[3] = nil,
+				[4] = nil,
+			}
 		},
 		global = {
 			Enabled = true,
@@ -342,6 +348,65 @@ StaticPopupDialogs["BUFFY_CUSTOM_EXPIRE_TIME"] = {
 	hideOnEscape = 1
 };
 
+local LOCALIZED_CONSUMABLE   = GetItemClassInfo(0);
+local LOCALIZED_FOODANDDRINK = GetItemSubClassInfo(0, 5);
+
+local function SetCustomFood(specIndex, foodItem)
+	if(not specIndex) then return end
+	if(not foodItem) then return end
+	
+	local name, link, _, _, _, class, subclass = GetItemInfo(foodItem);
+	if(name) then
+		if(class == LOCALIZED_CONSUMABLE and subclass == LOCALIZED_FOODANDDRINK) then
+			local itemID = Addon:GetItemID(link);
+			Addon.db.char.FoodPriority[specIndex] = LE.STAT.CUSTOM;
+			Addon.db.char.CustomFoods[specIndex] = itemID;
+			
+			local id, name, _, icon = GetSpecializationInfo(specIndex, false, false, false, UnitSex("player"));
+			local specName = string.format("|T%s:14:14:0:0|t %s", icon, name);
+			
+			Addon:UpdateBuffs();
+
+			Addon:AddMessage("%s set as custom food for %s.", link, specName);
+		else
+			Addon:AddMessage("Item %s is not a valid consumable food.", link);
+		end
+	else	
+		Addon:AddMessage("Unable to find food item %s. Allowed values are item name and id.", tostring(foodItem));
+	end
+end
+
+StaticPopupDialogs["BUFFY_SET_CUSTOM_FOOD"] = {
+	text = "Enter custom food name or item ID for %s:",
+	button1 = ACCEPT,
+	button2 = CANCEL,
+	hasEditBox = 1,
+	OnAccept = function(self, data)
+		local foodItem = self.editBox:GetText();
+		SetCustomFood(data.specIndex, foodItem);
+	end,
+	EditBoxOnEnterPressed = function(self, data)
+		local parent = self:GetParent();
+		local foodItem = parent.editBox:GetText();
+		SetCustomFood(data.specIndex, foodItem);
+		parent:Hide();
+	end,
+	OnShow = function(self, data)
+		self.editBox:SetFocus();
+		if(Addon.db.char.CustomFoods[data.specIndex]) then
+			local name = GetItemInfo(Addon.db.char.CustomFoods[data.specIndex]);
+			self.editBox:SetText(name);
+		end
+	end,
+	OnHide = function(self, data)
+		ChatEdit_FocusActiveWindow();
+		self.editBox:SetText("");
+	end,
+	timeout = 0,
+	exclusive = 0,
+	hideOnEscape = 1
+};
+
 function Addon:IsSomeDefaultExpirationTime(t)
 	return t == 0 or t == 60 or t == 120 or t == 300 or t == 600 or t == 900; 
 end
@@ -358,7 +423,7 @@ function Addon:GetCustomFoodStatPriorityMenu()
 	local menu = {};
 	
 	local activeSpec = GetSpecialization();
-	local numSpecs = GetNumSpecGroups();
+	local numSpecs = GetNumSpecializations();
 	
 	local currentBestFood = Addon:GetFoodPreference(true)[1];
 	local bestFoodName = LE.RATING_NAMES[currentBestFood];
@@ -368,15 +433,7 @@ function Addon:GetCustomFoodStatPriorityMenu()
 			text = " ", isTitle = true, notCheckable = true,
 		});
 		
-		local spec = GetSpecialization(false, false, specIndex);
-		local name, description, icon, role;
-		
-		if(not spec) then
-			icon = "Interface\\Icons\\Ability_Marksmanship";
-			name = string.format("Spec %d", specIndex);
-		else
-			_, name, description, icon, _, role = GetSpecializationInfo(spec);
-		end
+		local id, name, _, icon = GetSpecializationInfo(specIndex, false, false, false, UnitSex("player"));
 		
 		if(specIndex == activeSpec) then
 			tinsert(menu, {
@@ -392,36 +449,78 @@ function Addon:GetCustomFoodStatPriorityMenu()
 			});
 		end
 		
+		local customFoodText = "";
+		if(self.db.char.FoodPriority[specIndex] == LE.STAT.CUSTOM and self.db.char.CustomFoods[specIndex]) then
+			local _, customFood = GetItemInfo(self.db.char.CustomFoods[specIndex]);
+			customFoodText = string.format(" (|cffffbb00currently %s|r)", customFood);
+		end
+		
 		tmerge(menu, {
 			{
 				text = string.format("Attempt to guess (|cffffbb00%s|r)", bestFoodName),
-				func = function() self.db.char.FoodPriority[specIndex] = LE.STAT.AUTOMATIC; Addon:UpdateBuffs(); end,
+				func = function()
+					self.db.char.FoodPriority[specIndex] = LE.STAT.AUTOMATIC;
+					self.db.char.CustomFoods[specIndex] = nil;
+					Addon:UpdateBuffs();
+				end,
 				checked = function() return self.db.char.FoodPriority[specIndex] == LE.STAT.AUTOMATIC; end,
 			},
 			{
 				text = LE.RATING_NAMES[LE.STAT.HASTE],
-				func = function() self.db.char.FoodPriority[specIndex] = LE.STAT.HASTE; Addon:UpdateBuffs(); end,
+				func = function()
+					self.db.char.FoodPriority[specIndex] = LE.STAT.HASTE;
+					self.db.char.CustomFoods[specIndex] = nil;
+					Addon:UpdateBuffs();
+				end,
 				checked = function() return self.db.char.FoodPriority[specIndex] == LE.STAT.HASTE; end,
 			},
 			{
 				text = LE.RATING_NAMES[LE.STAT.MASTERY],
-				func = function() self.db.char.FoodPriority[specIndex] = LE.STAT.MASTERY; Addon:UpdateBuffs(); end,
+				func = function()
+					self.db.char.FoodPriority[specIndex] = LE.STAT.MASTERY;
+					self.db.char.CustomFoods[specIndex] = nil;
+					Addon:UpdateBuffs();
+				end,
 				checked = function() return self.db.char.FoodPriority[specIndex] == LE.STAT.MASTERY; end,
 			},
 			{
 				text = LE.RATING_NAMES[LE.STAT.CRIT],
-				func = function() self.db.char.FoodPriority[specIndex] = LE.STAT.CRIT; Addon:UpdateBuffs(); end,
+				func = function()
+					self.db.char.FoodPriority[specIndex] = LE.STAT.CRIT;
+					self.db.char.CustomFoods[specIndex] = nil;
+					Addon:UpdateBuffs();
+				end,
 				checked = function() return self.db.char.FoodPriority[specIndex] == LE.STAT.CRIT; end,
 			},
 			{
 				text = LE.RATING_NAMES[LE.STAT.VERSATILITY],
-				func = function() self.db.char.FoodPriority[specIndex] = LE.STAT.VERSATILITY; Addon:UpdateBuffs(); end,
+				func = function()
+					self.db.char.FoodPriority[specIndex] = LE.STAT.VERSATILITY;
+					self.db.char.CustomFoods[specIndex] = nil;
+					Addon:UpdateBuffs();
+				end,
 				checked = function() return self.db.char.FoodPriority[specIndex] == LE.STAT.VERSATILITY; end,
 			},
 			{
 				text = "Special food (Felmouth Frenzy/Pepper Breath)",
-				func = function() self.db.char.FoodPriority[specIndex] = LE.STAT.FELMOUTH; Addon:UpdateBuffs(); end,
-				checked = function() return self.db.char.FoodPriority[specIndex] == LE.STAT.FELMOUTH; end,
+				func = function()
+					self.db.char.FoodPriority[specIndex] = LE.STAT.SPECIAL;
+					self.db.char.CustomFoods[specIndex] = nil;
+					Addon:UpdateBuffs();
+				end,
+				checked = function() return self.db.char.FoodPriority[specIndex] == LE.STAT.SPECIAL; end,
+			},
+			{
+				text = "Custom food" .. customFoodText,
+				func = function()
+					local specName = string.format("|T%s:14:14:0:0|t %s", icon, name);
+					StaticPopup_Show("BUFFY_SET_CUSTOM_FOOD", specName, nil, {
+						specIndex = specIndex
+					});
+				end,
+				checked = function()
+					return self.db.char.FoodPriority[specIndex] == LE.STAT.CUSTOM and self.db.char.CustomFoods[specIndex];
+				end,
 			},
 		});
 		

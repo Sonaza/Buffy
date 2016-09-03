@@ -1,5 +1,6 @@
 ## 2.1.0
 * Added support for Legion consumable food, flasks and feasts.
+* Added option to enter a custom food that will be prioritised over any other.
 * Attempted fix for the error that causes Buffy keybind to sometimes recast the previous spell.
 * Disabled Paladin Retribution blessing alerts while in combat since they can only be cast while out of combat anyway.
 * Added option to self cast Paladin blessings even while in group.

@@ -49,6 +49,13 @@ function Addon:IsSpellReady(spellID)
 	return false;
 end
 
+function Addon:GetItemID(itemLink)
+	if(not itemLink) then return end
+	
+	local itemID = strmatch(itemLink, "item:(%d+)");
+	return itemID and tonumber(itemID) or nil;
+end
+
 ----------------------------------------------------------
 
 function Addon:AddBuffItems(item_table, expansion, stat_type, items)
@@ -594,12 +601,15 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 		},
 		
 		[LE.CONSUMABLE_CATEGORY.LEGION] = {
-			[1094] = INSTANCETYPE_RAID, -- The Emerald Nightmare
-			[1205] = INSTANCETYPE_RAID, -- The Nighthold
+			-- [1094] = INSTANCETYPE_RAID, -- The Emerald Nightmare
+			-- [1205] = INSTANCETYPE_RAID, -- The Nighthold
 			
 			[1456] = INSTANCETYPE_DUNGEON, -- Eye of Azshara
-			[1457] = INSTANCETYPE_DUNGEON, -- 
 			[1458] = INSTANCETYPE_DUNGEON, -- Neltharion's Lair
+			[1466] = INSTANCETYPE_DUNGEON, -- Darkheart Thicket
+			[1477] = INSTANCETYPE_DUNGEON, -- Halls of Valor
+			[1501] = INSTANCETYPE_DUNGEON, -- Black Rook Hold
+			[1544] = INSTANCETYPE_DUNGEON, -- Violet Hold
 			
 		},
 		
@@ -634,6 +644,13 @@ function Addon:FindBestConsumableItem(consumable_type, preferredStat)
 		consumablesList = Addon:GetConsumablesTable("RUNES", LE.CONSUMABLE_CATEGORY.DRAENOR);
 	elseif(consumable_type == LE.CONSUMABLE_FOOD) then
 		consumablesList = Addon:GetConsumablesTable("FOODS", categories);
+		
+		local specIndex = GetSpecialization();
+		if(self.db.char.FoodPriority[specIndex] == LE.STAT.CUSTOM) then
+			consumablesList[LE.STAT.CUSTOM] = {
+			 	self.db.char.CustomFoods[specIndex],
+			}
+		end
 	end
 	
 	if(consumablesList ~= nil and type(consumablesList) == "table") then
