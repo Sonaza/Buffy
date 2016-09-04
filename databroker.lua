@@ -128,6 +128,7 @@ function Addon:InitializeDatabase()
 					SkipCrippling = false,
 					WoundPoisonPriority = false,
 					RefreshBoth = false,
+					EnableFindTreasure = true,
 				},
 				Warlock = {
 					EnableSoulstone = true,
@@ -199,6 +200,15 @@ function Addon:GetClassOptions()
 					text = "Refresh non-lethal poison too when using lethal poison",
 					func = function() Addon.db.global.Class.Rogue.RefreshBoth = not Addon.db.global.Class.Rogue.RefreshBoth; Addon:UpdateBuffs(); end,
 					checked = function() return Addon.db.global.Class.Rogue.RefreshBoth; end,
+					isNotRadio = true,
+				},
+				{
+					text = " ", isTitle = true, notCheckable = true,
+				},
+				{
+					text = "Alert if missing Find Treasure (when Outlaw)",
+					func = function() Addon.db.global.Class.Rogue.EnableFindTreasure = not Addon.db.global.Class.Rogue.EnableFindTreasure; Addon:UpdateBuffs(); end,
+					checked = function() return Addon.db.global.Class.Rogue.EnableFindTreasure; end,
 					isNotRadio = true,
 				},
 			},

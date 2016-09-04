@@ -70,6 +70,7 @@ LE.CONSUMABLE_FOOD		= 0x03;
 
 LE.ALERT_TYPE_SPELL		= 0x01;
 LE.ALERT_TYPE_ITEM		= 0x02;
+LE.ALERT_TYPE_CUSTOM	= 0x03;
 LE.ALERT_TYPE_SPECIAL	= 0xFF;
 
 LE.SPECIAL_FOOD			= 0x1;
@@ -389,6 +390,41 @@ local CLASS_CASTABLE_BUFFS = {
 					return Addon.db.global.Class.Rogue.RefreshBoth and hasBuff and remainingLethal >= duration - 20 and remainingDiff > 20;
 				end,
 				description = "Refresh Non-Lethal Poison Too",
+			},
+		},
+		[2] = {
+			{
+				skipBuffCheck = true,
+				condition = function()
+					if(not Addon.db.global.Class.Rogue.EnableFindTreasure) then return end
+					if(InCombatLockdown()) then return end
+					
+					local numTrackingTypes = GetNumTrackingTypes();
+					for i=1, numTrackingTypes do 
+						local name, texture, active = GetTrackingInfo(i);
+						if(texture == "Interface\\Icons\\icon_treasuremap") then
+							return not active;
+						end
+					end
+					
+					return false;
+				end,
+				info = {
+					id = 199736,
+					type = "custom",
+				},
+				cast = function()
+					local numTrackingTypes = GetNumTrackingTypes();
+					for i=1, numTrackingTypes do 
+						local name, texture, active = GetTrackingInfo(i);
+						if(texture == "Interface\\Icons\\icon_treasuremap") then
+							SetTracking(i, true);
+							return;
+						end
+					end
+				end,
+				primary = "Cast",
+				description = "Yarr, ye treasures be mine!",
 			},
 		},
 	},

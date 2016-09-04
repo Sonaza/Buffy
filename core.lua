@@ -164,6 +164,11 @@ function Addon:OnInitialize()
 		Addon:SlashHandler(message);
 	end
 	
+	SLASH_BUFFYINTERNAL1	= "/buffy_cast_custom_alert";
+	SlashCmdList["BUFFYINTERNAL"] = function(message)
+		Addon:CastCurrentCustom();
+	end
+	
 	Addon:InitializeDatabase();
 end
 
@@ -608,6 +613,8 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 			[1458] = INSTANCETYPE_DUNGEON, -- Neltharion's Lair
 			[1466] = INSTANCETYPE_DUNGEON, -- Darkheart Thicket
 			[1477] = INSTANCETYPE_DUNGEON, -- Halls of Valor
+			[1492] = INSTANCETYPE_DUNGEON, -- Maw of Souls
+			[1493] = INSTANCETYPE_DUNGEON, -- Vault of the Wardens
 			[1501] = INSTANCETYPE_DUNGEON, -- Black Rook Hold
 			[1544] = INSTANCETYPE_DUNGEON, -- Violet Hold
 			
@@ -904,8 +911,38 @@ function Addon:UpdateBuffs(forceUpdate)
 		end
 		
 		if(valid) then
-			if(data.bufflist and not UnitIsDeadOrGhost("player")) then
-				if(type(data.bufflist) == "function") then
+			if(not UnitIsDeadOrGhost("player")) then
+				if(not data.bufflist and data.skipBuffCheck) then
+					local alertType;
+					local alertID;
+					
+					if(data.info) then
+						if(data.info.type == "item" or data.info.type == "toy") then
+							alertType = LE.ALERT_TYPE_ITEM;
+						elseif(data.info.type == "spell") then
+							alertType = LE.ALERT_TYPE_SPELL;
+						elseif(data.info.type == "custom") then
+							alertType = LE.ALERT_TYPE_CUSTOM;
+						end
+						
+						alertID = data.info.id;
+					end
+					
+					if(alertType and alertID) then
+						Addon:ShowBuffyAlert(alertType, alertID, {
+								primary     = data.primary,
+								secondary   = data.secondary,
+								description = data.description,
+								info        = data.info,
+								noCast      = data.noCast,
+								cast        = data.cast,
+								icon        = data.icon,
+							},
+							data.vars
+						);
+						return;
+					end
+				elseif(type(data.bufflist) == "function") then
 					local shouldAlert, buffSpell, buffTarget = data.bufflist(data.vars);
 					
 					if(data.skipBuffCheck or shouldAlert and IsSpellKnown(buffSpell)) then
@@ -1330,7 +1367,25 @@ function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 		targetNameText = string.format(" on %s", Addon:GetColorizedUnitName(data.target));
 	end
 	
-	if(data.info and not data.noCast) then
+	Addon.CurrentCustomCastFunction = nil;
+	
+	if(alert_type == LE.ALERT_TYPE_CUSTOM) then
+		local realSpellID = Addon:GetRealSpellID(id);
+		name, _, icon = GetSpellInfo(realSpellID);
+		BuffyFrame.icon.texture:SetTexture(priorityIcon or icon);
+		
+		BuffyFrame.Tooltip = {
+			type = LE.ALERT_TYPE_SPELL,
+			id = realSpellID,
+		};
+		
+		if(not InCombatLockdown() and not noCast and data.cast) then
+			Addon.CurrentCustomCastFunction = data.cast;
+			Addon:SetTempBind("custom");
+		end
+		
+		BuffyFrame.title:SetFormattedText("|cfff1da54%s|r%s|n%s", primaryText or "Use", targetNameText, secondaryText or name or "<Error>");
+	elseif(data.info and not data.noCast) then
 		name, _, _, _, _, _, _, _, _, icon = GetItemInfo(data.info.id);
 		BuffyFrame.icon.texture:SetTexture(priorityIcon or icon);
 		
@@ -1354,10 +1409,7 @@ function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 			id = realSpellID,
 		};
 		
-		-- print("Spell", name, data.target)
-		
 		if(not InCombatLockdown() and not noCast) then
-			-- print("Setting bind")
 			Addon:SetTempBind("spell", name, data.target);
 		end
 		
@@ -1598,21 +1650,40 @@ function Addon:GetBinding()
 	return Addon.db.global.Keybind;
 end
 
+function Addon:CastCurrentCustom()
+	if(not Addon.CurrentCustomCastFunction) then return end
+	if(InCombatLockdown()) then return end
+	pcall(Addon.CurrentCustomCastFunction);
+end
+
 function Addon:SetTempBind(bindType, name, target)
-	if(not bindType or not name) then return end
+	if(not bindType) then return end
+	if(bindType ~= "custom" and not name) then return end
 	if(InCombatLockdown()) then return end
 	
 	if(self.db.global.UnbindWhenMoving and Addon.PlayerIsMoving) then return end
 	
+	BuffySpellButtonFrame:SetAttribute("type1", nil);
+	BuffySpellButtonFrame:SetAttribute("macrotext1", nil);
+	BuffySpellButtonFrame:SetAttribute("item1", nil);
+	BuffySpellButtonFrame:SetAttribute("spell1", nil);
+	BuffySpellButtonFrame:SetAttribute("unit1", "player");
+	
 	local key = Addon:GetBinding();
 	if(key) then
-		BuffySpellButtonFrame:SetAttribute("type1", bindType);
 		
-		if(bindType == "item" or bindType == "spell" or bindType == "toy") then
-			BuffySpellButtonFrame:SetAttribute(bindType .. "1", name);
+		if(bindType == "custom") then
+			BuffySpellButtonFrame:SetAttribute("type1", "macro");
+			BuffySpellButtonFrame:SetAttribute("macrotext1", "/buffy_cast_custom_alert");
+		else
+			BuffySpellButtonFrame:SetAttribute("type1", bindType);
+			
+			if(bindType == "item" or bindType == "spell" or bindType == "toy") then
+				BuffySpellButtonFrame:SetAttribute(bindType .. "1", name);
+			end
+			
+			BuffySpellButtonFrame:SetAttribute("unit1", target or "player");
 		end
-		
-		BuffySpellButtonFrame:SetAttribute("unit1", target or "player");
 		
 		SetOverrideBindingClick(BuffyFrame, true, key, "BuffySpellButtonFrame", "LeftButton");
 		
