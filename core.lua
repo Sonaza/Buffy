@@ -606,8 +606,8 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 		},
 		
 		[LE.CONSUMABLE_CATEGORY.LEGION] = {
-			-- [1094] = INSTANCETYPE_RAID, -- The Emerald Nightmare
-			-- [1205] = INSTANCETYPE_RAID, -- The Nighthold
+			-- [ ] = INSTANCETYPE_RAID, -- The Emerald Nightmare
+			-- [ ] = INSTANCETYPE_RAID, -- The Nighthold
 			
 			[1456] = INSTANCETYPE_DUNGEON, -- Eye of Azshara
 			[1458] = INSTANCETYPE_DUNGEON, -- Neltharion's Lair
@@ -617,13 +617,42 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 			[1493] = INSTANCETYPE_DUNGEON, -- Vault of the Wardens
 			[1501] = INSTANCETYPE_DUNGEON, -- Black Rook Hold
 			[1544] = INSTANCETYPE_DUNGEON, -- Violet Hold
+			-- [ ] = INSTANCETYPE_DUNGEON, -- The Arcway
+			-- [ ] = INSTANCETYPE_DUNGEON, -- Court of Stars
 			
 		},
-		
 	};
 	
 	if(instanceMapIDs[mapID] ~= nil) then
 		return instanceMapIDs[mapID] == INSTANCETYPE_RAID or (includeDungeons and instanceMapIDs[mapID] == INSTANCETYPE_DUNGEON);
+	end
+	
+	-- Hacky area map id fallback
+	local areaMapIDs = {
+		[1094] = INSTANCETYPE_RAID, -- The Emerald Nightmare
+		[1088] = INSTANCETYPE_RAID, -- The Nighthold
+		
+		[1079] = INSTANCETYPE_DUNGEON, -- The Arcway
+		[1087] = INSTANCETYPE_DUNGEON, -- Court of Stars
+	};
+	
+	local areaMapID = GetCurrentMapAreaID();
+	local hasAreaMapIDMatch = areaMapIDs[areaMapID] ~= nil;
+	
+	if(not hasAreaMapIDMatch) then
+		local zoneText = GetZoneText();
+		
+		for mapID, instanceType in pairs(areaMapIDs) do
+			if(zoneText == GetMapNameByID(mapID)) then
+				areaMapID = mapID;
+				hasAreaMapIDMatch = true;
+				break;
+			end
+		end
+	end
+	
+	if(hasAreaMapIDMatch) then
+		return areaMapIDs[areaMapID] == INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[areaMapID] == INSTANCETYPE_DUNGEON);
 	end
 	
 	return false;
@@ -1059,7 +1088,7 @@ function Addon:UpdateBuffs(forceUpdate)
 				end
 			end
 			
-			if(self.db.global.ConsumablesRemind.Runes and PLAYER_LEVEL >= 100) then
+			if(self.db.global.ConsumablesRemind.Runes and PLAYER_LEVEL >= 100 and PLAYER_LEVEL < 110) then
 				local checkForRunes = true;
 				if(self.db.global.ConsumablesRemind.OnlyInfiniteRune and GetItemCount(128482) == 0 and GetItemCount(128475) == 0) then
 					checkForRunes = false;
