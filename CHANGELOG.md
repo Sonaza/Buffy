@@ -4,9 +4,9 @@
 * Attempted fix for the error that causes Buffy keybind to sometimes recast the previous spell.
 * Disabled Paladin Retribution blessing alerts while in combat since they can only be cast while out of combat anyway.
 * Added option to self cast Paladin blessings even while in group.
+* Added reminder for outlaw rogue treasure tracking.
 * Fixed eating alert for new foods.
 * Fixed custom food stat priority menu.
-* Added reminder for outlaw rogue treasure tracking.
 
 ## 2.0.7
 * Added support for Inquisitor's Menacing Eye.

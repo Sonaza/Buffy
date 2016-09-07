@@ -6,8 +6,6 @@ Do you find yourself forgetting to rebuff when your class buffs or consumables e
 
 Buffy is a buff reminder addon that will remind you about consumables like flasks, runes and food, and class buffs and toggles like Rogue poisons or Druid forms.
 
-**Note!** Legion update removed all raid buffs that this addon used to remind about. Currently the addon will still only remind about Draenor consumables. Legion consumables will be added in a later update soon.
-
 ### Usage
 Buffy does not require any configuration out of the box but you can change few things around to your liking. You can access options by right clicking the Buffy alert or the DataBroker module. In case neither are visible you can also type **/bf** or **/buffy** in chat to open the options menu. Additional chat commands exist to toggle Buffy on or off, toggling frame lock and announcing buff status. See usage in game by typing **/buffy help**.
 
