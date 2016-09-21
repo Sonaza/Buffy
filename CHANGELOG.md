@@ -1,3 +1,8 @@
+## 2.1.1
+* Added additional option to disable consumable alerts while not resting separately of the global toggle.
+* Fixed bug that caused consumable alerts not to be displayed in dungeons and raids if only enabled in them.
+* Added Defiled Augment Rune to augment runes and re-enabled augment rune alerts at max level.
+
 ## 2.1.0
 * Added support for Legion consumable food, flasks and feasts.
 * Added option to enter a custom food that will be prioritised over any other.

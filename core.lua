@@ -508,10 +508,10 @@ end
 function Addon:GetConsumableExpansionLevel()
 	local level = UnitLevel("player");
 	if(level > 100) then
-		return LE.CONSUMABLE_CATEGORY.LEGION;
+		return LE.EXPANSION.LEGION;
 	end
 	
-	return LE.CONSUMABLE_CATEGORY.DRAENOR;
+	return LE.EXPANSION.DRAENOR;
 end
 
 function Addon:GetConsumablesTable(tableName, categories)
@@ -551,12 +551,11 @@ function Addon:PlayerHasConsumableBuff(consumable_type, preferredStat)
 	
 	local consumablesList = nil;
 	
+	local categories = Addon:GetConsumableCategories();
 	if(consumable_type == LE.CONSUMABLE_FLASK) then
-		local categories = Addon:GetConsumableCategories();
 		consumablesList = Addon:GetConsumablesTable("FLASKS", categories);
 	elseif(consumable_type == LE.CONSUMABLE_RUNE) then
-		-- Only browse draenor list for runes since no runes in legion
-		consumablesList = Addon:GetConsumablesTable("RUNES", LE.CONSUMABLE_CATEGORY.DRAENOR);
+		consumablesList = Addon:GetConsumablesTable("RUNES", categories);
 	end
 	
 	if(consumablesList ~= nil and type(consumablesList) == "table") then
@@ -576,7 +575,7 @@ local INSTANCETYPE_RAID 	= 0x1;
 local INSTANCETYPE_DUNGEON 	= 0x2;
 
 function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR)
-	local expansionLevel = expansionLevel or LE.CONSUMABLE_CATEGORY.LEGION;
+	local expansionLevel = expansionLevel or LE.EXPANSION.LEGION;
 	
 	local includeDungeons = includeDungeons or false;
 	if(includeDungeons == nil) then includeDungeons = false end
@@ -590,7 +589,7 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 	if(not includeLFR and (difficultyID == 7 or difficultyID == 17)) then return false end
 	
 	local instanceMapIDs = {
-		[LE.CONSUMABLE_CATEGORY.DRAENOR] = {
+		[LE.EXPANSION.DRAENOR] = {
 			[1228] = INSTANCETYPE_RAID, -- Highmaul
 			[1205] = INSTANCETYPE_RAID, -- Blackrock Foundry
 			[1448] = INSTANCETYPE_RAID, -- Hellfire Citadel
@@ -605,9 +604,9 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 			[1358] = INSTANCETYPE_DUNGEON, -- Upper Blackrock Spire
 		},
 		
-		[LE.CONSUMABLE_CATEGORY.LEGION] = {
-			-- [ ] = INSTANCETYPE_RAID, -- The Emerald Nightmare
-			-- [ ] = INSTANCETYPE_RAID, -- The Nighthold
+		[LE.EXPANSION.LEGION] = {
+			[1520] = INSTANCETYPE_RAID, -- The Emerald Nightmare
+			[1530] = INSTANCETYPE_RAID, -- The Nighthold
 			
 			[1456] = INSTANCETYPE_DUNGEON, -- Eye of Azshara
 			[1458] = INSTANCETYPE_DUNGEON, -- Neltharion's Lair
@@ -617,43 +616,44 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 			[1493] = INSTANCETYPE_DUNGEON, -- Vault of the Wardens
 			[1501] = INSTANCETYPE_DUNGEON, -- Black Rook Hold
 			[1544] = INSTANCETYPE_DUNGEON, -- Violet Hold
-			-- [ ] = INSTANCETYPE_DUNGEON, -- The Arcway
-			-- [ ] = INSTANCETYPE_DUNGEON, -- Court of Stars
+			[1516] = INSTANCETYPE_DUNGEON, -- The Arcway
+			[1571] = INSTANCETYPE_DUNGEON, -- Court of Stars
 			
 		},
 	};
 	
-	if(instanceMapIDs[mapID] ~= nil) then
-		return instanceMapIDs[mapID] == INSTANCETYPE_RAID or (includeDungeons and instanceMapIDs[mapID] == INSTANCETYPE_DUNGEON);
+	if(instanceMapIDs[expansionLevel] and instanceMapIDs[expansionLevel][mapID]) then
+		return instanceMapIDs[expansionLevel][mapID] == INSTANCETYPE_RAID or (includeDungeons and instanceMapIDs[expansionLevel][mapID] == INSTANCETYPE_DUNGEON);
 	end
 	
 	-- Hacky area map id fallback
-	local areaMapIDs = {
-		[1094] = INSTANCETYPE_RAID, -- The Emerald Nightmare
-		[1088] = INSTANCETYPE_RAID, -- The Nighthold
+	-- local areaMapIDs = {
+	-- 	[LE.EXPANSION.LEGION] = {
+	-- 		[1094] = INSTANCETYPE_RAID, -- The Emerald Nightmare
+	-- 		[1088] = INSTANCETYPE_RAID, -- The Nighthold
+	-- 	},
+	-- };
+	
+	-- if(not areaMapIDs[expansionLevel]) then return false end
+	
+	-- local areaMapID = GetCurrentMapAreaID();
+	-- local hasAreaMapIDMatch = areaMapIDs[expansionLevel][areaMapID] ~= nil;
+	
+	-- if(not hasAreaMapIDMatch) then
+	-- 	local zoneText = GetZoneText();
 		
-		[1079] = INSTANCETYPE_DUNGEON, -- The Arcway
-		[1087] = INSTANCETYPE_DUNGEON, -- Court of Stars
-	};
+	-- 	for mapID, instanceType in pairs(areaMapIDs) do
+	-- 		if(zoneText == GetMapNameByID(mapID)) then
+	-- 			areaMapID = mapID;
+	-- 			hasAreaMapIDMatch = true;
+	-- 			break;
+	-- 		end
+	-- 	end
+	-- end
 	
-	local areaMapID = GetCurrentMapAreaID();
-	local hasAreaMapIDMatch = areaMapIDs[areaMapID] ~= nil;
-	
-	if(not hasAreaMapIDMatch) then
-		local zoneText = GetZoneText();
-		
-		for mapID, instanceType in pairs(areaMapIDs) do
-			if(zoneText == GetMapNameByID(mapID)) then
-				areaMapID = mapID;
-				hasAreaMapIDMatch = true;
-				break;
-			end
-		end
-	end
-	
-	if(hasAreaMapIDMatch) then
-		return areaMapIDs[areaMapID] == INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[areaMapID] == INSTANCETYPE_DUNGEON);
-	end
+	-- if(hasAreaMapIDMatch) then
+	-- 	return areaMapIDs[expansionLevel][areaMapID] == INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[expansionLevel][areaMapID] == INSTANCETYPE_DUNGEON);
+	-- end
 	
 	return false;
 end
@@ -669,6 +669,13 @@ function Addon:FlaskIsNonConsumable(itemID)
 	return itemID == 118922 or itemID == 86569 or itemID == 129192;
 end
 
+function Addon:RuneIsNonConsumable(itemID)
+	return itemID == 128482 or itemID == 128475;
+end
+
+-- Buffy:GetConsumablesTable("RUNES", Buffy:GetConsumableCategories())
+-- Buffy:FindBestConsumableItem(2, 1)
+
 function Addon:FindBestConsumableItem(consumable_type, preferredStat)
 	local consumablesList = nil;
 	
@@ -677,7 +684,7 @@ function Addon:FindBestConsumableItem(consumable_type, preferredStat)
 	if(consumable_type == LE.CONSUMABLE_FLASK) then
 		consumablesList = Addon:GetConsumablesTable("FLASKS", categories);
 	elseif(consumable_type == LE.CONSUMABLE_RUNE) then
-		consumablesList = Addon:GetConsumablesTable("RUNES", LE.CONSUMABLE_CATEGORY.DRAENOR);
+		consumablesList = Addon:GetConsumablesTable("RUNES", categories);
 	elseif(consumable_type == LE.CONSUMABLE_FOOD) then
 		consumablesList = Addon:GetConsumablesTable("FOODS", categories);
 		
@@ -690,6 +697,7 @@ function Addon:FindBestConsumableItem(consumable_type, preferredStat)
 	end
 	
 	if(consumablesList ~= nil and type(consumablesList) == "table") then
+		local PLAYER_LEVEL = UnitLevel("player");
 		for _, itemID in ipairs(consumablesList[preferredStat]) do
 			local skip = false;
 			
@@ -697,10 +705,17 @@ function Addon:FindBestConsumableItem(consumable_type, preferredStat)
 				skip = true;
 			end
 			
+			if(consumable_type == LE.CONSUMABLE_RUNE and PLAYER_LEVEL == 110 and Addon:RuneIsNonConsumable(itemID)) then
+				skip = true;
+			end
+			
 			if(not skip) then
 				local count = GetItemCount(itemID);
 				if(count > 0) then
-					return itemID, count;
+					local _, _, _, _, reqLevel = GetItemInfo(itemID);
+					if((reqLevel or 0) <= PLAYER_LEVEL) then
+						return itemID, count;
+					end
 				end
 			end
 		end
@@ -1033,25 +1048,26 @@ function Addon:UpdateBuffs(forceUpdate)
 	
 	local canShowConsumableAlert = not InCombatLockdown() or not self.db.global.ConsumablesRemind.NotInCombat;
 	if(canShowConsumableAlert and self.db.global.ConsumablesRemind.Enabled and PLAYER_LEVEL >= 90) then
+		local expansionLevel = Addon:GetConsumableExpansionLevel();
+		
 		local inValidInstance;
 		if(self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.EVERYWHERE) then
 			inValidInstance = true;
+		elseif(self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.EVERYWHERE_NOT_RESTING and not IsResting()) then
+			inValidInstance = true;
 		else
 			local enableDungeons = self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.RAIDS_AND_DUNGEONS;
-			local expansionLevel = Addon:GetConsumableExpansionLevel();
-			inValidInstance = Addon:PlayerInValidInstance(expansionlevel, enableDungeons, not self.db.global.ConsumablesRemind.DisableInLFR);
-		end
-		
-		if(self.db.global.ConsumablesRemind.DisableInLFR and Addon:IsPlayerInLFR()) then
-			inValidInstance = false;
+			inValidInstance = Addon:PlayerInValidInstance(expansionLevel, enableDungeons, not self.db.global.ConsumablesRemind.DisableInLFR);
+			
+			if(self.db.global.ConsumablesRemind.DisableInLFR and Addon:IsPlayerInLFR()) then
+				inValidInstance = false;
+			end
 		end
 		
 		local inValidGroup = not self.db.global.ConsumablesRemind.DisableOutsideGroup or (IsInGroup() or IsInRaid());
 		
 		if(inValidInstance and inValidGroup) then
 			local preferredStats = Addon:GetStatPreference(PLAYER_CLASS, PLAYER_SPEC);
-			
-			local expansionLevel = Addon:GetConsumableExpansionLevel();
 			
 			if(self.db.global.ConsumablesRemind.Flasks) then
 				-- Loop through preferred stat types
@@ -1088,9 +1104,11 @@ function Addon:UpdateBuffs(forceUpdate)
 				end
 			end
 			
-			if(self.db.global.ConsumablesRemind.Runes and PLAYER_LEVEL >= 100 and PLAYER_LEVEL < 110) then
+			if(self.db.global.ConsumablesRemind.Runes and PLAYER_LEVEL >= 100) then
 				local checkForRunes = true;
-				if(self.db.global.ConsumablesRemind.OnlyInfiniteRune and GetItemCount(128482) == 0 and GetItemCount(128475) == 0) then
+				
+				-- Nonconsumable rune has max level of 109
+				if(PLAYER_LEVEL < 110 and self.db.global.ConsumablesRemind.OnlyInfiniteRune and GetItemCount(128482) == 0 and GetItemCount(128475) == 0) then
 					checkForRunes = false;
 				end
 				
@@ -1105,7 +1123,7 @@ function Addon:UpdateBuffs(forceUpdate)
 								-- Check if player has any runes in their inventory
 								local bestRuneID, count = Addon:FindBestConsumableItem(LE.CONSUMABLE_RUNE, preferredStat);
 								
-								local isInfiniteRune = (bestRuneID == 128482 or bestRuneID == 128475);
+								local isInfiniteRune = Addon:RuneIsNonConsumable(bestRuneID);
 								local cooldownExpired = true;
 								
 								-- Cooldown check for the non-consumable rune which has one

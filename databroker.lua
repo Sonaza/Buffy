@@ -24,6 +24,7 @@ LE.RAID_CONSUMABLES = {
 	RAIDS_ONLY 					= 1,
 	RAIDS_AND_DUNGEONS			= 2,
 	EVERYWHERE 					= 3,
+	EVERYWHERE_NOT_RESTING 		= 4,
 };
 
 function Addon:SlashHandler(message)
@@ -691,6 +692,11 @@ function Addon:GetDatabrokerMenuData()
 					tooltipOnButton = 1,
 				},
 				{
+					text = "Enable everywhere while not resting",
+					func = function() self.db.global.ConsumablesRemind.Mode = LE.RAID_CONSUMABLES.EVERYWHERE_NOT_RESTING; Addon:UpdateBuffs(); CloseMenus(); end,
+					checked = function() return self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.EVERYWHERE_NOT_RESTING; end,
+				},
+				{
 					text = "Enable everywhere",
 					func = function() self.db.global.ConsumablesRemind.Mode = LE.RAID_CONSUMABLES.EVERYWHERE; Addon:UpdateBuffs(); CloseMenus(); end,
 					checked = function() return self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.EVERYWHERE; end,
@@ -717,7 +723,7 @@ function Addon:GetDatabrokerMenuData()
 					},
 				},
 				{
-					text = ("Enable for augment runes %s"):format(UnitLevel("player") > 109 and "(disabled)" or ""),
+					text = "Enable for augment runes",
 					func = function() self.db.global.ConsumablesRemind.Runes = not self.db.global.ConsumablesRemind.Runes; Addon:UpdateBuffs(); CloseMenus(); end,
 					checked = function() return self.db.global.ConsumablesRemind.Runes; end,
 					isNotRadio = true,
@@ -726,11 +732,11 @@ function Addon:GetDatabrokerMenuData()
 						{
 							text = "Only alert for the non-consumable rune",
 							func = function() self.db.global.ConsumablesRemind.OnlyInfiniteRune = not self.db.global.ConsumablesRemind.OnlyInfiniteRune; Addon:UpdateBuffs(); CloseMenus(); end,
-							checked = function() return self.db.global.ConsumablesRemind.OnlyInfiniteRune; end,
+							checked = function() return UnitLevel("player") < 110 and self.db.global.ConsumablesRemind.OnlyInfiniteRune; end,
 							isNotRadio = true,
+							disabled = UnitLevel("player") > 109,
 						},
 					},
-					disabled = UnitLevel("player") > 109,
 				},
 				{
 					text = "Enable for food",
