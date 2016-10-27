@@ -1,3 +1,7 @@
+## 2.1.2
+* Adjusted feast announcement to work with restriction placed upon UnitPosition function. Now feast alerts will alert no matter where you are instead of only near the feast position.
+* TOC bump for 7.1.0.
+
 ## 2.1.1
 * Added additional option to disable consumable alerts while not resting separately of the global toggle.
 * Fixed bug that caused consumable alerts not to be displayed in dungeons and raids if only enabled in them.

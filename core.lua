@@ -742,10 +742,9 @@ function Addon:COMBAT_LOG_EVENT_UNFILTERED(_, timestamp, event, hideCaster, sour
 		local expansionLevel = Addon:GetConsumableExpansionLevel();
 		
 		if(BUFFY_CONSUMABLES.FEASTS[expansionLevel][spellId] ~= nil) then
-			local x, y, _, instance = UnitPosition(sourceName);
+			local _, _, _, instance = UnitPosition(sourceName);
 			
 			Addon.SummonedFeasts[spellId] = {
-				position = { x = x, y = y },
 				instance = instance,
 				time = GetTime(),
 			};
@@ -756,8 +755,9 @@ function Addon:COMBAT_LOG_EVENT_UNFILTERED(_, timestamp, event, hideCaster, sour
 end
 
 function Addon:GetPlayerDistanceToPoint(pinstance, px, py)
-	local x, y, _, instance = UnitPosition("player");
-	return instance == pinstance and (((px - x) ^ 2 + (py - y) ^ 2) ^ 0.5) / 1.098;
+	-- local x, y, _, instance = UnitPosition("player");
+	-- return instance == pinstance and (((px - x) ^ 2 + (py - y) ^ 2) ^ 0.5) / 1.098;
+	return -1;
 end
 
 function Addon:IsFeastUp()
@@ -1188,9 +1188,10 @@ function Addon:UpdateBuffs(forceUpdate)
 							local tableExpires = (data.time + BUFFY_CONSUMABLES.FEASTS[expansionLevel][spell].duration) - GetTime();
 							
 							if(tableExpires > 0) then
-								local feastRange = Addon:GetPlayerDistanceToPoint(data.instance, data.position.x, data.position.y);
-								if(feastRange and feastRange <= 75) then
-									tinsert(sorted_feasts, { spell = spell, stats = BUFFY_CONSUMABLES.FEASTS[expansionLevel][spell].stats, range = feastRange, });
+								local _, _, _, instance = UnitPosition("player");
+								-- Verify player and feast are at least in same instance
+								if(instance == data.instance) then
+									tinsert(sorted_feasts, { spell = spell, stats = BUFFY_CONSUMABLES.FEASTS[expansionLevel][spell].stats, });
 								end
 							else
 								Addon.SummonedFeasts[spell] = nil;
