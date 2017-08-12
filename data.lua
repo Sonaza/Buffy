@@ -30,6 +30,45 @@ LE.EXPANSION = {
 	LEGION      = 6,
 };
 
+LE.INSTANCETYPE_RAID 	= 0x1;
+LE.INSTANCETYPE_DUNGEON = 0x2;
+LE.INSTANCE_MAP_IDS = {
+	[LE.EXPANSION.DRAENOR] = {
+		[1228] = LE.INSTANCETYPE_RAID, -- Highmaul
+		[1205] = LE.INSTANCETYPE_RAID, -- Blackrock Foundry
+		[1448] = LE.INSTANCETYPE_RAID, -- Hellfire Citadel
+		
+		[1182] = LE.INSTANCETYPE_DUNGEON, -- Auchindoun
+		[1175] = LE.INSTANCETYPE_DUNGEON, -- Bloodmaul Slag Mines
+		[1208] = LE.INSTANCETYPE_DUNGEON, -- Grimrail Depot
+		[1195] = LE.INSTANCETYPE_DUNGEON, -- Iron Docks
+		[1176] = LE.INSTANCETYPE_DUNGEON, -- Shadowmoon Burial Grounds
+		[1209] = LE.INSTANCETYPE_DUNGEON, -- Skyreach
+		[1279] = LE.INSTANCETYPE_DUNGEON, -- The Everbloom
+		[1358] = LE.INSTANCETYPE_DUNGEON, -- Upper Blackrock Spire
+	},
+	
+	[LE.EXPANSION.LEGION] = {
+		[1520] = LE.INSTANCETYPE_RAID, -- The Emerald Nightmare
+		[1530] = LE.INSTANCETYPE_RAID, -- The Nighthold
+		[1648] = LE.INSTANCETYPE_RAID, -- Trial of Valor
+		[1676] = LE.INSTANCETYPE_RAID, -- Tomb of Sargeras
+		
+		[1456] = LE.INSTANCETYPE_DUNGEON, -- Eye of Azshara
+		[1458] = LE.INSTANCETYPE_DUNGEON, -- Neltharion's Lair
+		[1466] = LE.INSTANCETYPE_DUNGEON, -- Darkheart Thicket
+		[1477] = LE.INSTANCETYPE_DUNGEON, -- Halls of Valor
+		[1492] = LE.INSTANCETYPE_DUNGEON, -- Maw of Souls
+		[1493] = LE.INSTANCETYPE_DUNGEON, -- Vault of the Wardens
+		[1501] = LE.INSTANCETYPE_DUNGEON, -- Black Rook Hold
+		[1544] = LE.INSTANCETYPE_DUNGEON, -- Violet Hold
+		[1516] = LE.INSTANCETYPE_DUNGEON, -- The Arcway
+		[1571] = LE.INSTANCETYPE_DUNGEON, -- Court of Stars
+		[1677] = LE.INSTANCETYPE_DUNGEON, -- Cathedral of Eternal Night
+		
+	},
+};
+
 -- Enums
 LE.STAT = {
 	AGILITY 	= 0x001,
@@ -106,7 +145,6 @@ Addon:AddBuffSpell(5487,	LE.BUFF_SPECIAL, "DRUID_BEAR_FORM");
 Addon:AddBuffSpell(768,		LE.BUFF_SPECIAL, "DRUID_CAT_FORM");
 Addon:AddBuffSpell(24858,	LE.BUFF_SPECIAL, "DRUID_MOONKIN_FORM");
 
-Addon:AddBuffSpell(203528,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_MIGHT");
 Addon:AddBuffSpell(203538,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_KINGS");
 Addon:AddBuffSpell(203539,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_WISDOM");
 
@@ -148,21 +186,22 @@ local CLASS_CASTABLE_BUFFS = {
 			{
 				vars = {
 					buffs = {
-						LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT,
 						LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS,
 						LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM,
 					},
 					roleBuffs = { -- Priorities for roles
-						["DAMAGER"] = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM },
-						["TANK"]    = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT },
-						["HEALER"]  = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT },
-						["NONE"]    = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM },
+						["DAMAGER"] = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM },
+						["TANK"]    = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM },
+						["HEALER"]  = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS },
+						["NONE"]    = { LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM },
 					},
-					roleOrder = { "TANK", "DAMAGER", "HEALER", "NONE" },
+					roleOrder = { "TANK", "HEALER", "DAMAGER", "NONE" },
 					buffsRemaining = 1337,
 					getNumBlessings = function()
-						-- Pally gains blessings on 42, 44 an 46
-						return math.min(3, (UnitLevel("player") - 40) / 2);
+						local knownSpells = 0;
+						if(IsSpellKnown(LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS)) then knownSpells = knownSpells + 1 end
+						if(IsSpellKnown(LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM)) then knownSpells = knownSpells + 1 end
+						return knownSpells;
 					end,
 				},
 				bufflist = function(self)
@@ -172,7 +211,7 @@ local CLASS_CASTABLE_BUFFS = {
 					self.buffsRemaining = buffsRemaining;
 					
 					if(Addon.db.global.Class.Paladin.OnlyRemind) then
-						return buffsRemaining > 0, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_MIGHT;
+						return buffsRemaining > 0, LE.BUFFS.PALADIN_GREATER_BLESSING_OF_KINGS;
 					end
 					
 					if(buffsRemaining > 0) then
@@ -192,56 +231,77 @@ local CLASS_CASTABLE_BUFFS = {
 								end
 							end
 						else
-							-- Player probably wants to self buff might at the very least
-							local hasBuff = Addon:UnitHasBuff("player", self.roleBuffs["DAMAGER"][1]);
-							if(not hasBuff) then
-								buffToCast = {
-									spell = self.roleBuffs["DAMAGER"][1],
-									target = "player",
-								};
-							else
-								local missingBuffs = Addon:ScanMissingPartyBuffsByRole(self.roleBuffs);
-								local playerUnitID = Addon:GetPlayerUnitID();
-								
-								local buffPriorities = {};
-								
-								for rolePriority, role in ipairs(self.roleOrder) do
-									if(missingBuffs[role]) then
-										for unit, buffs in pairs(missingBuffs[role]) do
-											local spell = buffs[1];
-											local priority = #buffs;
-											
-											local totalPriority = priority * (5-rolePriority);
-											
-											if(unit == playerUnitID) then
-												totalPriority = totalPriority * 1.25;
-											end
-											
-											tinsert(buffPriorities, {
-												spell = spell,
-												target = unit,
-												priority = totalPriority,
-											});
-										end
+							local remainingBuffs = {};
+							for _, buffSpellId in ipairs(self.buffs) do
+								local found = false;
+								for index, data in ipairs(buffStatus["player"]) do
+									if(data.spell == buffSpellId) then
+										found = true;
+										break;
 									end
 								end
-								
-								table.sort(buffPriorities, function(a, b)
-									if(a == nil and b == nil) then return false end
-									if(a == nil) then return true end
-									if(b == nil) then return false end
-									
-									return a.priority > b.priority;
-								end);
-								
-								ASDASD = buffPriorities;
-								
-								if(buffPriorities[1]) then
-									buffToCast = {
-										spell = buffPriorities[1].spell,
-										target = buffPriorities[1].target,
-									};
+								if(not found) then
+									remainingBuffs[buffSpellId] = true;
 								end
+							end
+							
+							local remainingRoleBuffs = {};
+							for role, roleBuffs in pairs(self.roleBuffs) do
+								if(not remainingRoleBuffs[role]) then remainingRoleBuffs[role] = {} end
+								for _, buffSpellId in ipairs(roleBuffs) do
+									if(remainingBuffs[buffSpellId]) then
+										tinsert(remainingRoleBuffs[role], buffSpellId);
+									end
+								end
+							end
+						
+							local missingBuffs = Addon:ScanMissingPartyBuffsByRole(remainingRoleBuffs);
+							local playerUnitID = Addon:GetPlayerUnitID();
+							
+							local buffPriorities = {};
+							
+							for rolePriority, role in ipairs(self.roleOrder) do
+								if(missingBuffs[role]) then
+									for unit, buffs in pairs(missingBuffs[role]) do
+										local spell = buffs[1];
+										local priority = #buffs;
+										
+										local totalPriority = priority * (5-rolePriority);
+										
+										if(unit == playerUnitID) then
+											totalPriority = totalPriority * 1.1;
+										end
+										
+										if(spell == LE.BUFFS.PALADIN_GREATER_BLESSING_OF_WISDOM) then
+											if(UnitPowerType(unit) == SPELL_POWER_MANA) then
+												totalPriority = totalPriority * 1.1;
+											else
+												totalPriority = totalPriority * 0.5;
+											end
+										end
+										
+										tinsert(buffPriorities, {
+											spell = spell,
+											target = unit,
+											priority = totalPriority,
+										});
+									end
+								end
+							end
+							
+							table.sort(buffPriorities, function(a, b)
+								if(a == nil and b == nil) then return false end
+								if(a == nil) then return true end
+								if(b == nil) then return false end
+								
+								return a.priority > b.priority;
+							end);
+							
+							if(buffPriorities[1]) then
+								buffToCast = {
+									spell = buffPriorities[1].spell,
+									target = buffPriorities[1].target,
+								};
 							end
 						end
 						
@@ -582,11 +642,12 @@ BUFFY_ITEM_SPELLS = {};
 -------------------------------
 -- Generic consumables
 
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.AGILITY, 		{ 129192, 118922, 86569 });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.STRENGTH, 		{ 118922, 86569 });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.INTELLECT, 	{ 118922, 86569 });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.STAMINA, 		{ 129192, 118922, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.AGILITY, 		{ 147707, 129192, 118922, 86569 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.STRENGTH, 		{ 147707, 118922, 86569 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.INTELLECT, 	{ 147707, 118922, 86569 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.GENERIC, LE.STAT.STAMINA, 		{ 147707, 129192, 118922, });
 
+Addon:AddItemSpell(147707, 242551); -- Repurposed Fel Focuser
 Addon:AddItemSpell(118922, 176151); -- Oralius' Crystal
 Addon:AddItemSpell(86569,  127230); -- Crystal of Insanity
 Addon:AddItemSpell(129192, 193456); -- Inquisitor's Menacing Eye

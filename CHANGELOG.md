@@ -1,3 +1,8 @@
+## 2.1.3
+* TOC bump for 7.2.5.
+* Added Repurposed Fel Focuser as a non-consumable flask.
+* Fixed Retribution Paladin buff alerts.
+
 ## 2.1.2
 * Adjusted feast announcement to work with restriction placed upon UnitPosition function. Now feast alerts will alert no matter where you are instead of only near the feast position.
 * TOC bump for 7.1.0.

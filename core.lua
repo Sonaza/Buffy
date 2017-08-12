@@ -571,9 +571,6 @@ function Addon:PlayerHasConsumableBuff(consumable_type, preferredStat)
 	return false, nil, nil, false;
 end
 
-local INSTANCETYPE_RAID 	= 0x1;
-local INSTANCETYPE_DUNGEON 	= 0x2;
-
 function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR)
 	local expansionLevel = expansionLevel or LE.EXPANSION.LEGION;
 	
@@ -588,49 +585,15 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 	if(instanceType ~= "raid" and instanceType ~= "party") then return false end
 	if(not includeLFR and (difficultyID == 7 or difficultyID == 17)) then return false end
 	
-	local instanceMapIDs = {
-		[LE.EXPANSION.DRAENOR] = {
-			[1228] = INSTANCETYPE_RAID, -- Highmaul
-			[1205] = INSTANCETYPE_RAID, -- Blackrock Foundry
-			[1448] = INSTANCETYPE_RAID, -- Hellfire Citadel
-			
-			[1182] = INSTANCETYPE_DUNGEON, -- Auchindoun
-			[1175] = INSTANCETYPE_DUNGEON, -- Bloodmaul Slag Mines
-			[1208] = INSTANCETYPE_DUNGEON, -- Grimrail Depot
-			[1195] = INSTANCETYPE_DUNGEON, -- Iron Docks
-			[1176] = INSTANCETYPE_DUNGEON, -- Shadowmoon Burial Grounds
-			[1209] = INSTANCETYPE_DUNGEON, -- Skyreach
-			[1279] = INSTANCETYPE_DUNGEON, -- The Everbloom
-			[1358] = INSTANCETYPE_DUNGEON, -- Upper Blackrock Spire
-		},
-		
-		[LE.EXPANSION.LEGION] = {
-			[1520] = INSTANCETYPE_RAID, -- The Emerald Nightmare
-			[1530] = INSTANCETYPE_RAID, -- The Nighthold
-			
-			[1456] = INSTANCETYPE_DUNGEON, -- Eye of Azshara
-			[1458] = INSTANCETYPE_DUNGEON, -- Neltharion's Lair
-			[1466] = INSTANCETYPE_DUNGEON, -- Darkheart Thicket
-			[1477] = INSTANCETYPE_DUNGEON, -- Halls of Valor
-			[1492] = INSTANCETYPE_DUNGEON, -- Maw of Souls
-			[1493] = INSTANCETYPE_DUNGEON, -- Vault of the Wardens
-			[1501] = INSTANCETYPE_DUNGEON, -- Black Rook Hold
-			[1544] = INSTANCETYPE_DUNGEON, -- Violet Hold
-			[1516] = INSTANCETYPE_DUNGEON, -- The Arcway
-			[1571] = INSTANCETYPE_DUNGEON, -- Court of Stars
-			
-		},
-	};
-	
-	if(instanceMapIDs[expansionLevel] and instanceMapIDs[expansionLevel][mapID]) then
-		return instanceMapIDs[expansionLevel][mapID] == INSTANCETYPE_RAID or (includeDungeons and instanceMapIDs[expansionLevel][mapID] == INSTANCETYPE_DUNGEON);
+	if(LE.INSTANCE_MAP_IDS[expansionLevel] and LE.INSTANCE_MAP_IDS[expansionLevel][mapID]) then
+		return LE.INSTANCE_MAP_IDS[expansionLevel][mapID] == LE.INSTANCETYPE_RAID or (includeDungeons and LE.INSTANCE_MAP_IDS[expansionLevel][mapID] == LE.INSTANCETYPE_DUNGEON);
 	end
 	
 	-- Hacky area map id fallback
 	-- local areaMapIDs = {
 	-- 	[LE.EXPANSION.LEGION] = {
-	-- 		[1094] = INSTANCETYPE_RAID, -- The Emerald Nightmare
-	-- 		[1088] = INSTANCETYPE_RAID, -- The Nighthold
+	-- 		[1094] = LE.INSTANCETYPE_RAID, -- The Emerald Nightmare
+	-- 		[1088] = LE.INSTANCETYPE_RAID, -- The Nighthold
 	-- 	},
 	-- };
 	
@@ -652,7 +615,7 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 	-- end
 	
 	-- if(hasAreaMapIDMatch) then
-	-- 	return areaMapIDs[expansionLevel][areaMapID] == INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[expansionLevel][areaMapID] == INSTANCETYPE_DUNGEON);
+	-- 	return areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_DUNGEON);
 	-- end
 	
 	return false;
@@ -666,7 +629,7 @@ function Addon:IsPlayerInLFR()
 end
 
 function Addon:FlaskIsNonConsumable(itemID)
-	return itemID == 118922 or itemID == 86569 or itemID == 129192;
+	return itemID == 147707 or itemID == 118922 or itemID == 86569 or itemID == 129192;
 end
 
 function Addon:RuneIsNonConsumable(itemID)
@@ -702,6 +665,10 @@ function Addon:FindBestConsumableItem(consumable_type, preferredStat)
 			local skip = false;
 			
 			if(consumable_type == LE.CONSUMABLE_FLASK and self.db.global.ConsumablesRemind.OnlyInfiniteFlask and not Addon:PlayerInInstance() and not Addon:FlaskIsNonConsumable(itemID)) then
+				skip = true;
+			end
+			
+			if(consumable_type == LE.CONSUMABLE_FLASK and self.db.global.ConsumablesRemind.OnlyInfiniteFlaskWhenOutdated and Addon:PlayerInOutdatedInstance() and not Addon:FlaskIsNonConsumable(itemID)) then
 				skip = true;
 			end
 			
@@ -815,7 +782,7 @@ function Addon:ScanBuffList(bufflist)
 	return partyBuffState;
 end
 
--- Buffy:ScanExclusiveBuffList({ 203528, 203538, 203539 })
+-- Buffy:ScanExclusiveBuffList({ 203538, 203539 })
 function Addon:ScanExclusiveBuffList(bufflist)
 	if(not bufflist or type(bufflist) ~= "table") then return nil end
 	
@@ -846,7 +813,7 @@ function Addon:ScanExclusiveBuffList(bufflist)
 	return partyBuffs;
 end
 
--- Buffy:UnitMissingSomeBuff({ 203528, 203538, 203539 })
+-- Buffy:UnitMissingSomeBuff({ 203538, 203539 })
 function Addon:UnitMissingSomeBuff(unit, bufflist)
 	if(not bufflist or type(bufflist) ~= "table") then return nil end
 	
@@ -858,8 +825,8 @@ function Addon:UnitMissingSomeBuff(unit, bufflist)
 	return false;
 end
 
--- Buffy:ScanMissingPartyBuffsByRole({["DAMAGER"]= { 203528, 203538, 203539 },["TANK"]= { 203538, 203539, 203528 },["HEALER"]= { 203538, 203539, 203528 },["NONE"]= { 203538, 203528, 203539 },})
--- Buffy:ScanMissingPartyBuffsByRole({ 203528, 203538, 203539 })
+-- Buffy:ScanMissingPartyBuffsByRole({["DAMAGER"]= { 203538, 203539 },["TANK"]= { 203538, 203539, 203528 },["HEALER"]= { 203538, 203539, 203528 },["NONE"]= { 203538, 203539 },})
+-- Buffy:ScanMissingPartyBuffsByRole({ 203538, 203539 })
 function Addon:ScanMissingPartyBuffsByRole(bufflist)
 	if(not bufflist or type(bufflist) ~= "table") then return nil end
 	
@@ -989,7 +956,7 @@ function Addon:UpdateBuffs(forceUpdate)
 				elseif(type(data.bufflist) == "function") then
 					local shouldAlert, buffSpell, buffTarget = data.bufflist(data.vars);
 					
-					if(data.skipBuffCheck or shouldAlert and IsSpellKnown(buffSpell)) then
+					if((data.skipBuffCheck or shouldAlert) and buffSpell and IsSpellKnown(buffSpell)) then
 						local alertType = LE.ALERT_TYPE_SPELL;
 						local alertID = buffSpell;
 						
@@ -1611,6 +1578,20 @@ function Addon:PlayerInInstance()
 	end
 	
 	return true, instanceType;
+end
+
+function Addon:PlayerInOutdatedInstance()
+	local name, instanceType, _, _, _, _, _, instanceMapID = GetInstanceInfo();
+	
+	if(instanceType == "none" or C_Garrison.IsOnGarrisonMap()) then
+		return false;
+	end
+	
+	if(instanceMapID and not LE.INSTANCE_MAP_IDS[LE.EXPANSION.LEGION][instanceMapID]) then
+		return true;
+	end
+	
+	return false;
 end
 
 function BuffyFrame_OnShow(self)

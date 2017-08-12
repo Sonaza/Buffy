@@ -104,6 +104,7 @@ function Addon:InitializeDatabase()
 				Food = true,
 				
 				OnlyInfiniteFlask = false,
+				OnlyInfiniteFlaskWhenOutdated = true,
 				OnlyInfiniteRune = false,
 				
 				FeastsMode = LE.FEASTS_MODE.OWN_FOOD,
@@ -715,9 +716,15 @@ function Addon:GetDatabrokerMenuData()
 					hasArrow = true,
 					menuList = {
 						{
-							text = "Only alert for non-consumable outside instances",
+							text = "Use only the non-consumable when not in an instance",
 							func = function() self.db.global.ConsumablesRemind.OnlyInfiniteFlask = not self.db.global.ConsumablesRemind.OnlyInfiniteFlask; Addon:UpdateBuffs(); CloseMenus(); end,
 							checked = function() return self.db.global.ConsumablesRemind.OnlyInfiniteFlask; end,
+							isNotRadio = true,
+						},
+						{
+							text = "Use only the non-consumable when in an outdated instance",
+							func = function() self.db.global.ConsumablesRemind.OnlyInfiniteFlaskWhenOutdated = not self.db.global.ConsumablesRemind.OnlyInfiniteFlaskWhenOutdated; Addon:UpdateBuffs(); CloseMenus(); end,
+							checked = function() return self.db.global.ConsumablesRemind.OnlyInfiniteFlaskWhenOutdated; end,
 							isNotRadio = true,
 						},
 					},
