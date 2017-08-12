@@ -2,6 +2,8 @@
 * TOC bump for 7.2.5.
 * Added Repurposed Fel Focuser as a non-consumable flask.
 * Fixed Retribution Paladin buff alerts.
+* Fixed broken Assassination Rogue poison alert when Toxic Blade talent was selected (used to be Agonizing Poison)
+* Fixed Find Treasure alert on Outlaw Rogues.
 
 ## 2.1.2
 * Adjusted feast announcement to work with restriction placed upon UnitPosition function. Now feast alerts will alert no matter where you are instead of only near the feast position.

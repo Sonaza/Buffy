@@ -131,7 +131,6 @@ LE.SPECIAL_UNLOCKED		= 0x3;
 
 Addon:AddBuffSpell(2823,	LE.BUFF_SPECIAL, "ROGUE_DEADLY_POISON");
 Addon:AddBuffSpell(8679, 	LE.BUFF_SPECIAL, "ROGUE_WOUND_POISON");
-Addon:AddBuffSpell(200802, 	LE.BUFF_SPECIAL, "ROGUE_AGONIZING_POISON");
 Addon:AddBuffSpell(3408, 	LE.BUFF_SPECIAL, "ROGUE_CRIPPLING_POISON");
 Addon:AddBuffSpell(108211,	LE.BUFF_SPECIAL, "ROGUE_LEECHING_POISON");
 
@@ -385,7 +384,6 @@ local CLASS_CASTABLE_BUFFS = {
 	["ROGUE"] = {
 		[1] = {
 			{
-				noTalent = { 6, 1 },
 				bufflist = { LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
 				condition = function()
 					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableLethal and not Addon.db.global.Class.Rogue.WoundPoisonPriority;
@@ -393,15 +391,7 @@ local CLASS_CASTABLE_BUFFS = {
 				description = "Missing Lethal Poison",
 			},
 			{
-				hasTalent = { 6, 1 },
-				bufflist = { LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
-				condition = function()
-					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableLethal and not Addon.db.global.Class.Rogue.WoundPoisonPriority;
-				end,
-				description = "Missing Lethal Poison",
-			},
-			{
-				bufflist = { LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_DEADLY_POISON, },
+				bufflist = { LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_DEADLY_POISON, },
 				condition = function()
 					return CanPoisonWeapons() and Addon.db.global.Class.Rogue.EnableLethal and Addon.db.global.Class.Rogue.WoundPoisonPriority;
 				end,
@@ -435,7 +425,7 @@ local CLASS_CASTABLE_BUFFS = {
 					hasBuff, _, _, remainingNonLethal, duration = Addon:UnitHasBuff("player", LE.BUFFS.ROGUE_CRIPPLING_POISON);
 					if(not hasBuff or Addon:WillBuffExpireSoon(remainingNonLethal)) then return false end
 					
-					hasBuff, _, _, remainingLethal, duration = Addon:UnitHasSomeBuff("player", { LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_DEADLY_POISON });
+					hasBuff, _, _, remainingLethal, duration = Addon:UnitHasSomeBuff("player", { LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_DEADLY_POISON });
 					
 					local remainingDiff = math.abs((remainingNonLethal or 0) - (remainingLethal or 0));
 					return Addon.db.global.Class.Rogue.RefreshBoth and hasBuff and remainingLethal >= duration - 20 and remainingDiff > 20;
@@ -454,7 +444,7 @@ local CLASS_CASTABLE_BUFFS = {
 					hasBuff, _, _, remainingNonLethal, duration = Addon:UnitHasBuff("player", LE.BUFFS.ROGUE_LEECHING_POISON);
 					if(not hasBuff or Addon:WillBuffExpireSoon(remainingNonLethal)) then return false end
 					
-					hasBuff, _, _, remainingLethal, duration = Addon:UnitHasSomeBuff("player", { LE.BUFFS.ROGUE_AGONIZING_POISON, LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_DEADLY_POISON });
+					hasBuff, _, _, remainingLethal, duration = Addon:UnitHasSomeBuff("player", { LE.BUFFS.ROGUE_WOUND_POISON, LE.BUFFS.ROGUE_DEADLY_POISON });
 					
 					local remainingDiff = math.abs((remainingNonLethal or 0) - (remainingLethal or 0));
 					return Addon.db.global.Class.Rogue.RefreshBoth and hasBuff and remainingLethal >= duration - 20 and remainingDiff > 20;
@@ -471,8 +461,8 @@ local CLASS_CASTABLE_BUFFS = {
 					
 					local numTrackingTypes = GetNumTrackingTypes();
 					for i=1, numTrackingTypes do 
-						local name, texture, active = GetTrackingInfo(i);
-						if(texture == "Interface\\Icons\\icon_treasuremap") then
+						local name, icon, active = GetTrackingInfo(i);
+						if(icon == 1064187) then
 							return not active;
 						end
 					end
@@ -486,8 +476,8 @@ local CLASS_CASTABLE_BUFFS = {
 				cast = function()
 					local numTrackingTypes = GetNumTrackingTypes();
 					for i=1, numTrackingTypes do 
-						local name, texture, active = GetTrackingInfo(i);
-						if(texture == "Interface\\Icons\\icon_treasuremap") then
+						local name, icon, active = GetTrackingInfo(i);
+						if(icon == 1064187) then
 							SetTracking(i, true);
 							return;
 						end
