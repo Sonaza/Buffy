@@ -1,4 +1,4 @@
-## 2.1.3
+## 2.2.0
 * TOC bump for 7.2.5.
 * Added Repurposed Fel Focuser as a non-consumable flask.
 * Fixed Retribution Paladin buff alerts.
