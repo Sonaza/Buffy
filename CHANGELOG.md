@@ -1,6 +1,7 @@
 ## 2.3.0
 * TOC bump for 7.3.0.
 * Added support for the new non-consumable Lightforged Augment Rune.
+* Now displaying alerts in Antorus, the Burning Throne.
 
 ## 2.2.0
 * TOC bump for 7.2.5.
