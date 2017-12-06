@@ -1,8 +1,8 @@
-## Interface: 70200
+## Interface: 70300
 ## Title: Buffy
 ## Notes: A fancy buff reminder for the forgetful
 ## Author: Sonaza
-## Version: 2.2.0
+## Version: 2.3.0
 ## SavedVariables: BuffyDB
 
 #@no-lib-strip@

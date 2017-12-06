@@ -131,6 +131,8 @@ function Addon:InitializeDatabase()
 					WoundPoisonPriority = false,
 					RefreshBoth = false,
 					EnableFindTreasure = true,
+					EnablePotionPack = true,
+					EnableSmokyBoots = true,
 				},
 				Warlock = {
 					EnableSoulstone = true,
@@ -213,6 +215,24 @@ function Addon:GetClassOptions()
 					checked = function() return Addon.db.global.Class.Rogue.EnableFindTreasure; end,
 					isNotRadio = true,
 				},
+				-- {
+				-- 	text = " ", isTitle = true, notCheckable = true,
+				-- },
+				-- {
+				-- 	text = "Class Hall Buffs", isTitle = true, notCheckable = true,
+				-- },
+				-- {
+				-- 	text = "Remind to use Pack of Battle Potions",
+				-- 	func = function() Addon.db.global.Class.Rogue.EnablePotionPack = not Addon.db.global.Class.Rogue.EnablePotionPack; Addon:UpdateBuffs(); end,
+				-- 	checked = function() return Addon.db.global.Class.Rogue.EnablePotionPack; end,
+				-- 	isNotRadio = true,
+				-- },
+				-- {
+				-- 	text = "Remind to use Smoky Boots",
+				-- 	func = function() Addon.db.global.Class.Rogue.EnableSmokyBoots = not Addon.db.global.Class.Rogue.EnableSmokyBoots; Addon:UpdateBuffs(); end,
+				-- 	checked = function() return Addon.db.global.Class.Rogue.EnableSmokyBoots; end,
+				-- 	isNotRadio = true,
+				-- },
 			},
 		},
 		["WARLOCK"] = {
@@ -739,12 +759,12 @@ function Addon:GetDatabrokerMenuData()
 						{
 							text = "Only alert for the non-consumable rune",
 							func = function() self.db.global.ConsumablesRemind.OnlyInfiniteRune = not self.db.global.ConsumablesRemind.OnlyInfiniteRune; Addon:UpdateBuffs(); CloseMenus(); end,
-							checked = function() return UnitLevel("player") < 110 and self.db.global.ConsumablesRemind.OnlyInfiniteRune; end,
+							checked = function() return self.db.global.ConsumablesRemind.OnlyInfiniteRune; end,
 							isNotRadio = true,
-							disabled = UnitLevel("player") > 109,
-							tooltipTitle = UnitLevel("player") > 109 and "Disabled at 110",
-							tooltipOnButton = 1,
-							tooltipWhileDisabled = 1,
+							-- disabled = UnitLevel("player") > 109,
+							-- tooltipTitle = UnitLevel("player") > 109 and "Disabled at 110",
+							-- tooltipOnButton = 1,
+							-- tooltipWhileDisabled = 1,
 						},
 					},
 				},

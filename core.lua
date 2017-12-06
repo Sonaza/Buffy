@@ -466,9 +466,9 @@ function Addon:GetNumPartyMembers()
 	return GetNumGroupMembers();
 end
 
-function Addon:UnitHasSomeBuff(unit, bufflist)
+function Addon:UnitHasSomeBuff(unit, bufflist, checkKnownSpell)
 	for _, buff in ipairs(bufflist) do
-		if(IsSpellKnown(buff)) then
+		if(IsSpellKnown(buff) or not checkKnownSpell) then
 			local hasBuff, isCastByPlayer, caster, remaining, duration = Addon:UnitHasBuff(unit, buff);
 			if(hasBuff) then
 				return true, buff, Addon:WillBuffExpireSoon(remaining), remaining, duration;
@@ -629,11 +629,20 @@ function Addon:IsPlayerInLFR()
 end
 
 function Addon:FlaskIsNonConsumable(itemID)
-	return itemID == 147707 or itemID == 118922 or itemID == 86569 or itemID == 129192;
+	return itemID == 147707 or itemID == 129192 -- Legion
+	    or itemID == 118922 -- WoD
+	    or itemID == 86569; -- MoP
 end
 
-function Addon:RuneIsNonConsumable(itemID)
-	return itemID == 128482 or itemID == 128475;
+function Addon:RuneIsNonConsumable(itemID, playerLevel)
+	local playerLevel = playerLevel or UnitLevel("player");
+	if(playerLevel == 110) then
+		-- Legion
+		return itemID == 153023;
+	elseif(playerLevel >= 100) then
+		-- WoD
+		return itemID == 128482 or itemID == 128475;
+	end
 end
 
 -- Buffy:GetConsumablesTable("RUNES", Buffy:GetConsumableCategories())
@@ -672,7 +681,7 @@ function Addon:FindBestConsumableItem(consumable_type, preferredStat)
 				skip = true;
 			end
 			
-			if(consumable_type == LE.CONSUMABLE_RUNE and PLAYER_LEVEL == 110 and Addon:RuneIsNonConsumable(itemID)) then
+			if(consumable_type == LE.CONSUMABLE_RUNE and self.db.global.ConsumablesRemind.OnlyInfiniteRune and not Addon:RuneIsNonConsumable(itemID, PLAYER_LEVEL)) then
 				skip = true;
 			end
 			
@@ -984,23 +993,37 @@ function Addon:UpdateBuffs(forceUpdate)
 						return;
 					end
 				else
-					local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.bufflist);
+					local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.bufflist, data.checkKnownSpell);
 					
-					if(data.skipBuffCheck or (not hasBuff or (buffExpiring and canShowExpiration)) and buffSpell and IsSpellKnown(buffSpell)) then
-						Addon:ShowBuffyAlert(LE.ALERT_TYPE_SPELL, buffSpell, {
-								primary     = data.primary,
-								secondary   = data.secondary,
-								description = data.description,
-								info        = data.info,
-								expiring    = buffExpiring,
-								remaining   = Addon:GetBuffRemaining("player", buffSpell),
-								noCast      = data.noCast,
-								icon        = data.icon,
-							},
-							data.vars
-						);
+					if(data.skipBuffCheck or (not hasBuff or (buffExpiring and canShowExpiration)) and buffSpell) then
+						local alertType = LE.ALERT_TYPE_SPELL;
+						local alertID = buffSpell;
 						
-						return;
+						if(data.info) then
+							if(data.info.type == "item" or data.info.type == "toy") then
+								alertType = LE.ALERT_TYPE_ITEM;
+							elseif(data.info.type == "spell") then
+								alertType = LE.ALERT_TYPE_SPELL;
+							end
+							
+							alertID = data.info.id;
+						end
+						
+						if(alertType ~= LE.ALERT_TYPE_SPELL or IsSpellKnown(buffSpell)) then
+							Addon:ShowBuffyAlert(alertType, alertID, {
+									primary     = data.primary,
+									secondary   = data.secondary,
+									description = data.description,
+									info        = data.info,
+									expiring    = buffExpiring,
+									remaining   = Addon:GetBuffRemaining("player", buffSpell),
+									noCast      = data.noCast,
+									icon        = data.icon,
+								},
+								data.vars
+							);
+							return;
+						end
 					end
 				end
 			end
@@ -1074,8 +1097,7 @@ function Addon:UpdateBuffs(forceUpdate)
 			if(self.db.global.ConsumablesRemind.Runes and PLAYER_LEVEL >= 100) then
 				local checkForRunes = true;
 				
-				-- Nonconsumable rune has max level of 109
-				if(PLAYER_LEVEL < 110 and self.db.global.ConsumablesRemind.OnlyInfiniteRune and GetItemCount(128482) == 0 and GetItemCount(128475) == 0) then
+				if(PLAYER_LEVEL == 110 and self.db.global.ConsumablesRemind.OnlyInfiniteRune and GetItemCount(153023) == 0) then
 					checkForRunes = false;
 				end
 				
@@ -1255,7 +1277,7 @@ function Addon:UpdateBuffs(forceUpdate)
 					return;
 				end
 			else
-				local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.bufflist);
+				local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.bufflist, data.checkKnownSpell);
 				
 				if(data.skipBuffCheck or (not hasBuff or (buffExpiring and canShowExpiration)) and IsSpellKnown(buffSpell)) then
 					Addon:ShowBuffyAlert(LE.ALERT_TYPE_SPELL, buffSpell, {
@@ -1410,6 +1432,7 @@ function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 		};
 		
 		if(not InCombatLockdown() and not noCast) then
+			-- print("Temp Binding! 1 /", name, noCast, data.info.type, data.info.id, data.target);
 			Addon:SetTempBind(data.info.type, data.info.id, data.target);
 		end
 		
@@ -1438,6 +1461,7 @@ function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 			id = id,
 		};
 		
+		-- print("Temp Binding! 2", data.info.type, data.info.id, data.target);
 		if(not InCombatLockdown() and self.db.global.ConsumablesRemind.KeybindEnabled and not noCast) then
 			Addon:SetTempBind("item", name, data.target);
 		end
@@ -1700,7 +1724,6 @@ function Addon:SetTempBind(bindType, name, target)
 	
 	local key = Addon:GetBinding();
 	if(key) then
-		
 		if(bindType == "custom") then
 			BuffySpellButtonFrame:SetAttribute("type1", "macro");
 			BuffySpellButtonFrame:SetAttribute("macrotext1", "/buffy_cast_custom_alert");

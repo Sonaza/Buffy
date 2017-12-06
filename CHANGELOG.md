@@ -1,3 +1,7 @@
+## 2.3.0
+* TOC bump for 7.3.0.
+* Added support for the new non-consumable Lightforged Augment Rune.
+
 ## 2.2.0
 * TOC bump for 7.2.5.
 * Added Repurposed Fel Focuser as a non-consumable flask.

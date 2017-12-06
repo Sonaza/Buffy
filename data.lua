@@ -53,6 +53,7 @@ LE.INSTANCE_MAP_IDS = {
 		[1530] = LE.INSTANCETYPE_RAID, -- The Nighthold
 		[1648] = LE.INSTANCETYPE_RAID, -- Trial of Valor
 		[1676] = LE.INSTANCETYPE_RAID, -- Tomb of Sargeras
+		[1712] = LE.INSTANCETYPE_RAID, -- Antorus, the Burning Throne
 		
 		[1456] = LE.INSTANCETYPE_DUNGEON, -- Eye of Azshara
 		[1458] = LE.INSTANCETYPE_DUNGEON, -- Neltharion's Lair
@@ -148,6 +149,17 @@ Addon:AddBuffSpell(203538,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_KINGS")
 Addon:AddBuffSpell(203539,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_WISDOM");
 
 Addon:AddBuffSpell(181943,	LE.BUFF_SPECIAL, "PEPE");
+
+local ROGUE_POTION_ITEM_ID = 139588;
+Addon:AddBuffSpell(220698,	LE.BUFF_SPECIAL, "ROGUE_POTION_VALEERA");
+Addon:AddBuffSpell(220700,	LE.BUFF_SPECIAL, "ROGUE_POTION_TAOSHI");
+Addon:AddBuffSpell(220711,	LE.BUFF_SPECIAL, "ROGUE_POTION_TESS");
+Addon:AddBuffSpell(220714,	LE.BUFF_SPECIAL, "ROGUE_POTION_JORACH");
+Addon:AddBuffSpell(220722,	LE.BUFF_SPECIAL, "ROGUE_POTION_GARONA");
+Addon:AddBuffSpell(220730,	LE.BUFF_SPECIAL, "ROGUE_POTION_TETHYS");
+
+local ROGUE_SMOKY_BOOTS_ITEM_ID = 139592;
+Addon:AddBuffSpell(220664,	LE.BUFF_SPECIAL, "ROGUE_SMOKY_BOOTS");
 
 local function CanPoisonWeapons()
 	local mainhand = GetInventoryItemLink("player", 16);
@@ -382,6 +394,56 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 	},
 	["ROGUE"] = {
+		all = {
+			-- {
+			-- 	bufflist = { LE.BUFFS.ROGUE_POTION_VALEERA, LE.BUFFS.ROGUE_POTION_TAOSHI, LE.BUFFS.ROGUE_POTION_TESS, LE.BUFFS.ROGUE_POTION_JORACH, LE.BUFFS.ROGUE_POTION_GARONA, LE.BUFFS.ROGUE_POTION_TETHYS },
+			-- 	condition = function()
+			-- 		if(not Addon.db.global.Class.Rogue.EnablePotionPack or IsResting()) then return false end
+					
+			-- 		local _, instanceType, _, _, _, _, _, instanceMapID = GetInstanceInfo();
+			-- 		if(instanceMapID ~= 1220) then
+			-- 			-- Not in Broken Isles
+			-- 			return false;
+			-- 		end
+				
+			-- 		if(GetItemCount(ROGUE_POTION_ITEM_ID, nil, true) == 0) then
+			-- 			return false;
+			-- 		end
+					
+			-- 		return true;
+			-- 	end,
+			-- 	info = {
+			-- 		id = ROGUE_POTION_ITEM_ID,
+			-- 		type = "item",
+			-- 	},
+			-- 	checkKnownSpell = false,
+			-- 	description = "Missing Rogue Potion",
+			-- },
+			-- {
+			-- 	bufflist = { LE.BUFFS.ROGUE_SMOKY_BOOTS },
+			-- 	condition = function()
+			-- 		if(not Addon.db.global.Class.Rogue.EnableSmokyBoots or IsResting()) then return false end
+					
+			-- 		local _, instanceType, _, _, _, _, _, instanceMapID = GetInstanceInfo();
+			-- 		if(instanceMapID ~= 1220) then
+			-- 			-- Not in Broken Isles
+			-- 			return false;
+			-- 		end
+				
+			-- 		if(GetItemCount(ROGUE_SMOKY_BOOTS_ITEM_ID, nil, true) == 0) then
+			-- 			return false;
+			-- 		end
+					
+			-- 		return true;
+			-- 	end,
+			-- 	info = {
+			-- 		id = ROGUE_SMOKY_BOOTS_ITEM_ID,
+			-- 		type = "item",
+			-- 	},
+			-- 	checkKnownSpell = false,
+			-- 	description = "Gotta Go Fast",
+			-- },
+		},
 		[1] = {
 			{
 				bufflist = { LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
@@ -695,10 +757,12 @@ Addon:AddItemSpell(127847, 188031); -- Flask of the Whispered Pact
 Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.STAMINA, 		{ 127858, 127850, });
 Addon:AddItemSpell(127850, 188035); -- Flask of Ten Thousand Scars
 
-Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.AGILITY, 		{ 140587 });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.STRENGTH,		{ 140587 });
-Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.INTELLECT,		{ 140587 });
+-- Non-consumable rune is listed first
+Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.AGILITY, 		{ 153023, 140587 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.STRENGTH,		{ 153023, 140587 });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.INTELLECT,		{ 153023, 140587 });
 Addon:AddItemSpell(140587, 224001);
+Addon:AddItemSpell(153023, 224001);
 
 Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.HASTE, 			{ 133571, 133566, 133561, });
 Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.MASTERY, 		{ 133572, 133567, 133562, });
