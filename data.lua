@@ -15,9 +15,10 @@ BUFFY_CANCEL_BINDING_TEXT 	= "Press Escape to Cancel";
 BUFFY_ACCEPT_TEXT			= "Save"
 
 LE.CONSUMABLE_CATEGORY = {
-	GENERIC     = 0,
-	DRAENOR     = 5,
-	LEGION      = 6,
+	GENERIC = 0,
+	DRAENOR = 5,
+	LEGION  = 6,
+	BFA     = 7,
 };
 
 LE.EXPANSION = {
@@ -28,6 +29,7 @@ LE.EXPANSION = {
 	PANDARIA    = 4,
 	DRAENOR     = 5,
 	LEGION      = 6,
+	BFA         = 7,
 };
 
 LE.INSTANCETYPE_RAID 	= 0x1;
@@ -66,7 +68,6 @@ LE.INSTANCE_MAP_IDS = {
 		[1516] = LE.INSTANCETYPE_DUNGEON, -- The Arcway
 		[1571] = LE.INSTANCETYPE_DUNGEON, -- Court of Stars
 		[1677] = LE.INSTANCETYPE_DUNGEON, -- Cathedral of Eternal Night
-		
 	},
 };
 
@@ -150,16 +151,9 @@ Addon:AddBuffSpell(203539,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_WISDOM"
 
 Addon:AddBuffSpell(181943,	LE.BUFF_SPECIAL, "PEPE");
 
-local ROGUE_POTION_ITEM_ID = 139588;
-Addon:AddBuffSpell(220698,	LE.BUFF_SPECIAL, "ROGUE_POTION_VALEERA");
-Addon:AddBuffSpell(220700,	LE.BUFF_SPECIAL, "ROGUE_POTION_TAOSHI");
-Addon:AddBuffSpell(220711,	LE.BUFF_SPECIAL, "ROGUE_POTION_TESS");
-Addon:AddBuffSpell(220714,	LE.BUFF_SPECIAL, "ROGUE_POTION_JORACH");
-Addon:AddBuffSpell(220722,	LE.BUFF_SPECIAL, "ROGUE_POTION_GARONA");
-Addon:AddBuffSpell(220730,	LE.BUFF_SPECIAL, "ROGUE_POTION_TETHYS");
-
-local ROGUE_SMOKY_BOOTS_ITEM_ID = 139592;
-Addon:AddBuffSpell(220664,	LE.BUFF_SPECIAL, "ROGUE_SMOKY_BOOTS");
+Addon:AddBuffSpell(6673, 	LE.STAT.STRENGTH + LE.STAT.AGILITY, "BATTLE_SHOUT");
+Addon:AddBuffSpell(21562,	LE.STAT.STAMINA, "POWER_WORD_FORTITUDE");
+Addon:AddBuffSpell(1459,	LE.STAT.INTELLECT, "ARCANE_INTELLECT");
 
 local function CanPoisonWeapons()
 	local mainhand = GetInventoryItemLink("player", 16);
@@ -187,7 +181,11 @@ LE.DRUID_FORM = {
 -- [x] = Override to previous on per spec basis where x is spec number
 local CLASS_CASTABLE_BUFFS = {
 	["WARRIOR"]	= {
-		
+		all = {
+			{
+				raidbuff = LE.BUFFS.BATTLE_SHOUT,
+			},
+		},
 	},
 	["DEATHKNIGHT"]	= {
 		
@@ -350,7 +348,11 @@ local CLASS_CASTABLE_BUFFS = {
 		
 	},
 	["PRIEST"] = {
-		
+		all = {
+			{
+				raidbuff = LE.BUFFS.POWER_WORD_FORTITUDE,
+			}
+		},
 	},
 	["SHAMAN"] = {
 		
@@ -394,56 +396,6 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 	},
 	["ROGUE"] = {
-		all = {
-			-- {
-			-- 	bufflist = { LE.BUFFS.ROGUE_POTION_VALEERA, LE.BUFFS.ROGUE_POTION_TAOSHI, LE.BUFFS.ROGUE_POTION_TESS, LE.BUFFS.ROGUE_POTION_JORACH, LE.BUFFS.ROGUE_POTION_GARONA, LE.BUFFS.ROGUE_POTION_TETHYS },
-			-- 	condition = function()
-			-- 		if(not Addon.db.global.Class.Rogue.EnablePotionPack or IsResting()) then return false end
-					
-			-- 		local _, instanceType, _, _, _, _, _, instanceMapID = GetInstanceInfo();
-			-- 		if(instanceMapID ~= 1220) then
-			-- 			-- Not in Broken Isles
-			-- 			return false;
-			-- 		end
-				
-			-- 		if(GetItemCount(ROGUE_POTION_ITEM_ID, nil, true) == 0) then
-			-- 			return false;
-			-- 		end
-					
-			-- 		return true;
-			-- 	end,
-			-- 	info = {
-			-- 		id = ROGUE_POTION_ITEM_ID,
-			-- 		type = "item",
-			-- 	},
-			-- 	checkKnownSpell = false,
-			-- 	description = "Missing Rogue Potion",
-			-- },
-			-- {
-			-- 	bufflist = { LE.BUFFS.ROGUE_SMOKY_BOOTS },
-			-- 	condition = function()
-			-- 		if(not Addon.db.global.Class.Rogue.EnableSmokyBoots or IsResting()) then return false end
-					
-			-- 		local _, instanceType, _, _, _, _, _, instanceMapID = GetInstanceInfo();
-			-- 		if(instanceMapID ~= 1220) then
-			-- 			-- Not in Broken Isles
-			-- 			return false;
-			-- 		end
-				
-			-- 		if(GetItemCount(ROGUE_SMOKY_BOOTS_ITEM_ID, nil, true) == 0) then
-			-- 			return false;
-			-- 		end
-					
-			-- 		return true;
-			-- 	end,
-			-- 	info = {
-			-- 		id = ROGUE_SMOKY_BOOTS_ITEM_ID,
-			-- 		type = "item",
-			-- 	},
-			-- 	checkKnownSpell = false,
-			-- 	description = "Gotta Go Fast",
-			-- },
-		},
 		[1] = {
 			{
 				bufflist = { LE.BUFFS.ROGUE_DEADLY_POISON, LE.BUFFS.ROGUE_WOUND_POISON },
@@ -551,6 +503,11 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 	},
 	["MAGE"] = {
+		all = {
+			{	
+				raidbuff = LE.BUFFS.ARCANE_INTELLECT,
+			}
+		},
 		[1]	= {
 			{
 				hasTalent = { 1, 1 },
@@ -772,6 +729,34 @@ Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.ST
 Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.STAT.SPECIAL,			{ 133574, 133569, 133564, }); -- Pepper Breath foods
 
 -------------------------------
+-- BFA consumables
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.AGILITY, 		{ 162518, 152638, });
+Addon:AddItemSpell(127848, 188033); -- Flask of the Seventh Demon
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.STRENGTH,		{ 162518, 152641, });
+Addon:AddItemSpell(127849, 188034); -- Flask of the Countless Armies
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.INTELLECT, 	{ 162518, 152639, });
+Addon:AddItemSpell(127847, 188031); -- Flask of the Whispered Pact
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.STAMINA, 		{ 162518, 152640, });
+Addon:AddItemSpell(127850, 188035); -- Flask of Ten Thousand Scars
+
+-- Non-consumable rune is listed first
+Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.AGILITY, 		{ 153023, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.STRENGTH,		{ 153023, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.INTELLECT,		{ 153023, });
+Addon:AddItemSpell(153023, 270058);
+
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.HASTE, 			{ 154884, 154883, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.MASTERY, 		{ 154888, 154887, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.CRIT,			{ 154882, 154881, });
+Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.VERSATILITY, 	{ 154886, 154885, });
+-- Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.STAMINA, 		{  }); -- No stamina foods
+--Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.SPECIAL,			{  }); -- No special foods
+
+-------------------------------
 -- Feasts
 
 BUFFY_CONSUMABLES.FEASTS = {
@@ -779,17 +764,17 @@ BUFFY_CONSUMABLES.FEASTS = {
 		[175215] = { -- Savage Feast
 			item = 118576,
 			duration = 180,
-			stats = 100,
+			stats = 80,
 		},
 		[160740] = { -- Feast of Waters
 			item = 111458,
 			duration = 180,
-			stats = 75,
+			stats = 12,
 		},
 		[160740] = { -- Feast of Blood
 			item = 111457,
 			duration = 180,
-			stats = 75,
+			stats = 12,
 		},
 	},
 	
@@ -797,12 +782,25 @@ BUFFY_CONSUMABLES.FEASTS = {
 		[201352] = { -- Lavish Suramar Feast
 			item = 133579,
 			duration = 180,
-			stats = 200,
+			stats = 22,
 		},
 		[201351] = { -- Hearty Feast
 			item = 133578,
 			duration = 180,
-			stats = 150,
+			stats = 18,
+		},
+	},
+	
+	[LE.CONSUMABLE_CATEGORY.BFA] = {
+		[259410] = { -- Bountiful Captain's Feast
+			item = 156526,
+			duration = 180,
+			stats = 100,
+		},
+		[259409] = { -- Galley Banquet
+			item = 156525,
+			duration = 180,
+			stats = 75,
 		},
 	},
 };

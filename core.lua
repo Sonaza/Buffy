@@ -362,18 +362,27 @@ function Addon:PlayerHasTalent(tier, column)
 	return talentID and selected;
 end
 
-function Addon:UnitAura(unit, spell_name, rank, flags)
-	return UnitAura(unit, spell_name, rank, flags);
+local function UnitAuraByNameOrId(unit, aura_name_or_id, filter)
+	for index = 1, 40 do
+		local name, _, _, _, _, _, _, _, _, spell_id = UnitAura(unit, index, filter);
+		if (name == aura_name_or_id or spell_id == aura_name_or_id) then
+			return UnitAura(unit, index, filter);
+		end
+	end
+	return nil;
+end
+
+function Addon:UnitAura(unit, spell_name, flags)
+	return UnitAuraByNameOrId(unit, spell_name, flags);
 end
 
 function Addon:UnitHasBuff(unit, spell)
 	if(not unit or not spell) then return false end
 	
 	local realSpellID = Addon:GetRealSpellID(spell);
-	local spell_name = GetSpellInfo(realSpellID);
-	if(not spell_name) then return false end
+	if(not realSpellID) then return false end
 	
-	local name, _, _, _, _, duration, expirationTime, unitCaster = Addon:UnitAura(unit, spell_name, nil, "HELPFUL");
+	local name, _, _, _, duration, expirationTime, unitCaster = Addon:UnitAura(unit, realSpellID, "HELPFUL");
 	if(not name) then
 		return false;
 	end
@@ -571,6 +580,17 @@ function Addon:PlayerHasConsumableBuff(consumable_type, preferredStat)
 	return false, nil, nil, false;
 end
 
+function ASDASD(a, b)
+	a = a or 1100;
+	b = b or 1400;
+	for id = a, b do
+		local mapInfo = C_Map.GetMapInfo(id);
+		if (mapInfo) then
+			print(id, mapInfo.name);
+		end
+	end
+end
+
 function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR)
 	local expansionLevel = expansionLevel or LE.EXPANSION.LEGION;
 	
@@ -590,33 +610,34 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 	end
 	
 	-- Hacky area map id fallback
-	-- local areaMapIDs = {
-	-- 	[LE.EXPANSION.LEGION] = {
-	-- 		[1094] = LE.INSTANCETYPE_RAID, -- The Emerald Nightmare
-	-- 		[1088] = LE.INSTANCETYPE_RAID, -- The Nighthold
-	-- 	},
-	-- };
+	 local areaMapIDs = {
+	 	[LE.EXPANSION.BFA] = {
+	 		[1148] = LE.INSTANCETYPE_RAID, -- Uldir
+	 		[1169] = LE.INSTANCETYPE_DUNGEON, -- Tol Dogor
+	 	},
+	 };
 	
-	-- if(not areaMapIDs[expansionLevel]) then return false end
+	 if(not areaMapIDs[expansionLevel]) then return false end
 	
-	-- local areaMapID = GetCurrentMapAreaID();
-	-- local hasAreaMapIDMatch = areaMapIDs[expansionLevel][areaMapID] ~= nil;
+	 local areaMapID = C_Map.GetBestMapForUnit("player");
+	 local hasAreaMapIDMatch = areaMapIDs[expansionLevel][areaMapID] ~= nil;
 	
-	-- if(not hasAreaMapIDMatch) then
-	-- 	local zoneText = GetZoneText();
+	 if(not hasAreaMapIDMatch) then
+	 	local zoneText = GetZoneText();
 		
-	-- 	for mapID, instanceType in pairs(areaMapIDs) do
-	-- 		if(zoneText == GetMapNameByID(mapID)) then
-	-- 			areaMapID = mapID;
-	-- 			hasAreaMapIDMatch = true;
-	-- 			break;
-	-- 		end
-	-- 	end
-	-- end
+	 	for mapID, instanceType in pairs(areaMapIDs) do
+	 		local mapInfo = C_Map.GetMapInfo(mapID);
+	 		if(mapInfo and zoneText == mapInfo.name) then
+	 			areaMapID = mapID;
+	 			hasAreaMapIDMatch = true;
+	 			break;
+	 		end
+	 	end
+	 end
 	
-	-- if(hasAreaMapIDMatch) then
-	-- 	return areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_DUNGEON);
-	-- end
+	 if(hasAreaMapIDMatch) then
+	 	return areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_DUNGEON);
+	 end
 	
 	return false;
 end
@@ -710,11 +731,11 @@ function Addon:IsUnitInParty(sourceName)
 	return false;
 end
 
-function Addon:COMBAT_LOG_EVENT_UNFILTERED(_, timestamp, event, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, ...)
+function Addon:COMBAT_LOG_EVENT_UNFILTERED(_)
+	local timestamp, event, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, spellSchool = CombatLogGetCurrentEventInfo();
+	
 	-- Check if someone in raid group created something
 	if(event == "SPELL_CREATE" and Addon:IsUnitInParty(sourceName)) then
-		local spellId, spellName, spellSchool = ...;
-		
 		local expansionLevel = Addon:GetConsumableExpansionLevel();
 		
 		if(BUFFY_CONSUMABLES.FEASTS[expansionLevel][spellId] ~= nil) then
@@ -870,6 +891,34 @@ function Addon:InArray(haystack, needle)
 	return false;
 end
 
+function Addon:GetBuffGroupStatus(spellId)
+	local willExpireSoon = nil;
+	local numUnitsAreMissingBuff = 0;
+	local numUnitsInRange = 0;
+	local buffRemaining = nil;
+	for index, unit in GroupIterator() do
+		if (UnitInRange(unit)) then
+			numUnitsInRange = numUnitsInRange + 1;
+			
+			local hasBuff, isCastByPlayer, unitCaster, remaining, duration = Addon:UnitHasBuff(unit, spellId);
+			
+			if(hasBuff) then
+				if (buffRemaining == nil) then
+					buffRemaining = remaining;
+				end
+				if (Addon:WillBuffExpireSoon(remaining)) then
+					willExpireSoon = true;
+					buffRemaining = remaining;
+				end
+			else
+				numUnitsAreMissingBuff = numUnitsAreMissingBuff + 1;
+			end
+		end
+	end
+	
+	return numUnitsAreMissingBuff == 0, numUnitsAreMissingBuff, numUnitsInRange, buffRemaining, willExpireSoon;
+end
+
 function Addon:UpdateBuffs(forceUpdate)
 	if(Addon:ShouldDoUpdate() or forceUpdate) then
 		Addon:UpdateDatabrokerText();
@@ -930,100 +979,109 @@ function Addon:UpdateBuffs(forceUpdate)
 			valid = valid and data.condition(data.vars);
 		end
 		
-		if(valid) then
-			if(not UnitIsDeadOrGhost("player")) then
-				if(not data.bufflist and data.skipBuffCheck) then
-					local alertType;
-					local alertID;
+		if(valid and not UnitIsDeadOrGhost("player")) then
+			if (data.raidbuff and IsSpellKnown(data.raidbuff)) then
+				local everybodyHasBuff, numUnitsMissingBuff, numUnitsInRange, buffRemaining, willExpireSoon = Addon:GetBuffGroupStatus(data.raidbuff);
+				if (not everybodyHasBuff or willExpireSoon) then
+					Addon:ShowBuffyAlert(LE.ALERT_TYPE_SPELL, data.raidbuff, {
+						numUnitsMissing = numUnitsMissingBuff,
+						expiring = willExpireSoon,
+						remaining = buffRemaining,
+					});
+					return;
+				end
+				
+			elseif(not data.bufflist and data.skipBuffCheck) then
+				local alertType;
+				local alertID;
+				
+				if(data.info) then
+					if(data.info.type == "item" or data.info.type == "toy") then
+						alertType = LE.ALERT_TYPE_ITEM;
+					elseif(data.info.type == "spell") then
+						alertType = LE.ALERT_TYPE_SPELL;
+					elseif(data.info.type == "custom") then
+						alertType = LE.ALERT_TYPE_CUSTOM;
+					end
+					
+					alertID = data.info.id;
+				end
+				
+				if(alertType and alertID) then
+					Addon:ShowBuffyAlert(alertType, alertID, {
+							primary     = data.primary,
+							secondary   = data.secondary,
+							description = data.description,
+							info        = data.info,
+							noCast      = data.noCast,
+							cast        = data.cast,
+							icon        = data.icon,
+						},
+						data.vars
+					);
+					return;
+				end
+			elseif(type(data.bufflist) == "function") then
+				local shouldAlert, buffSpell, buffTarget = data.bufflist(data.vars);
+				
+				if((data.skipBuffCheck or shouldAlert) and buffSpell and IsSpellKnown(buffSpell)) then
+					local alertType = LE.ALERT_TYPE_SPELL;
+					local alertID = buffSpell;
 					
 					if(data.info) then
 						if(data.info.type == "item" or data.info.type == "toy") then
 							alertType = LE.ALERT_TYPE_ITEM;
 						elseif(data.info.type == "spell") then
 							alertType = LE.ALERT_TYPE_SPELL;
-						elseif(data.info.type == "custom") then
-							alertType = LE.ALERT_TYPE_CUSTOM;
+						end
+						
+						alertID = data.info.id;
+					end
+						
+					Addon:ShowBuffyAlert(alertType, alertID, {
+							primary     = data.primary,
+							secondary   = data.secondary,
+							description = data.description,
+							target      = buffTarget,
+							info        = data.info,
+							noCast      = data.noCast,
+							icon        = data.icon,
+						},
+						data.vars
+					);
+					return;
+				end
+			else
+				local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.bufflist, data.checkKnownSpell);
+				
+				if(data.skipBuffCheck or (not hasBuff or (buffExpiring and canShowExpiration)) and buffSpell) then
+					local alertType = LE.ALERT_TYPE_SPELL;
+					local alertID = buffSpell;
+					
+					if(data.info) then
+						if(data.info.type == "item" or data.info.type == "toy") then
+							alertType = LE.ALERT_TYPE_ITEM;
+						elseif(data.info.type == "spell") then
+							alertType = LE.ALERT_TYPE_SPELL;
 						end
 						
 						alertID = data.info.id;
 					end
 					
-					if(alertType and alertID) then
+					if(alertType ~= LE.ALERT_TYPE_SPELL or IsSpellKnown(buffSpell)) then
 						Addon:ShowBuffyAlert(alertType, alertID, {
 								primary     = data.primary,
 								secondary   = data.secondary,
 								description = data.description,
 								info        = data.info,
-								noCast      = data.noCast,
-								cast        = data.cast,
-								icon        = data.icon,
-							},
-							data.vars
-						);
-						return;
-					end
-				elseif(type(data.bufflist) == "function") then
-					local shouldAlert, buffSpell, buffTarget = data.bufflist(data.vars);
-					
-					if((data.skipBuffCheck or shouldAlert) and buffSpell and IsSpellKnown(buffSpell)) then
-						local alertType = LE.ALERT_TYPE_SPELL;
-						local alertID = buffSpell;
-						
-						if(data.info) then
-							if(data.info.type == "item" or data.info.type == "toy") then
-								alertType = LE.ALERT_TYPE_ITEM;
-							elseif(data.info.type == "spell") then
-								alertType = LE.ALERT_TYPE_SPELL;
-							end
-							
-							alertID = data.info.id;
-						end
-							
-						Addon:ShowBuffyAlert(alertType, alertID, {
-								primary     = data.primary,
-								secondary   = data.secondary,
-								description = data.description,
-								target      = buffTarget,
-								info        = data.info,
+								expiring    = buffExpiring,
+								remaining   = Addon:GetBuffRemaining("player", buffSpell),
 								noCast      = data.noCast,
 								icon        = data.icon,
 							},
 							data.vars
 						);
 						return;
-					end
-				else
-					local hasBuff, buffSpell, buffExpiring = Addon:UnitHasSomeBuff("player", data.bufflist, data.checkKnownSpell);
-					
-					if(data.skipBuffCheck or (not hasBuff or (buffExpiring and canShowExpiration)) and buffSpell) then
-						local alertType = LE.ALERT_TYPE_SPELL;
-						local alertID = buffSpell;
-						
-						if(data.info) then
-							if(data.info.type == "item" or data.info.type == "toy") then
-								alertType = LE.ALERT_TYPE_ITEM;
-							elseif(data.info.type == "spell") then
-								alertType = LE.ALERT_TYPE_SPELL;
-							end
-							
-							alertID = data.info.id;
-						end
-						
-						if(alertType ~= LE.ALERT_TYPE_SPELL or IsSpellKnown(buffSpell)) then
-							Addon:ShowBuffyAlert(alertType, alertID, {
-									primary     = data.primary,
-									secondary   = data.secondary,
-									description = data.description,
-									info        = data.info,
-									expiring    = buffExpiring,
-									remaining   = Addon:GetBuffRemaining("player", buffSpell),
-									noCast      = data.noCast,
-									icon        = data.icon,
-								},
-								data.vars
-							);
-							return;
-						end
 					end
 				end
 			end
@@ -1250,7 +1308,6 @@ function Addon:UpdateBuffs(forceUpdate)
 		end
 		
 		if(valid and data.bufflist and not UnitIsDeadOrGhost("player")) then
-			
 			if(type(data.bufflist) == "function") then
 				local shouldAlert, buffSpell = data.bufflist(data.vars);
 				
@@ -1312,9 +1369,7 @@ function Addon:GetBuffRemaining(unit, spellID)
 	if(not unit or not spellID) then return 0 end
 	
 	local realSpellID = Addon:GetRealSpellID(spellID);
-	local spellName = GetSpellInfo(realSpellID);
-	
-	local name, _, _, _, _, _, expirationTime = UnitAura(unit, spellName, nil, "HELPFUL");
+	local name, _, _, _, _, expirationTime = Addon:UnitAura(unit, realSpellID, "HELPFUL");
 	if(name) then
 		return expirationTime - GetTime();
 	end
@@ -1476,16 +1531,22 @@ function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 	BuffyFrame.description:Hide();
 	
 	if(data) then
-		if(data.expiring and data.remaining) then
+		if(data.numUnitsMissing and data.numUnitsMissing > 0 and Addon:GetGroupType() ~= LE.GROUP_TYPE.SOLO) then
+			BuffyFrame.description:SetFormattedText("%d player%s missing the buff", data.numUnitsMissing, data.numUnitsMissing == 1 and "" or "s");
+			BuffyFrame.description:Show();
+			
+		elseif(data.expiring and data.remaining) then
 			if(alert_type == LE.ALERT_TYPE_ITEM and tonumber(data.count)) then
 				BuffyFrame.description:SetFormattedText("Expiring in %s / You have |cfff1da54%d|r", Addon:FormatTime(data.remaining), data.count);
 			else
 				BuffyFrame.description:SetFormattedText("Expiring in %s", Addon:FormatTime(data.remaining));
 			end
 			BuffyFrame.description:Show();
+			
 		elseif(alert_type == LE.ALERT_TYPE_ITEM and tonumber(data.count)) then
 			BuffyFrame.description:SetFormattedText("You have |cfff1da54%d|r in your inventory", tonumber(data.count));
 			BuffyFrame.description:Show();
+			
 		elseif(data.description) then
 			local text = Addon:GetMultiValue(data.description, vars);
 			BuffyFrame.description:SetText(text);

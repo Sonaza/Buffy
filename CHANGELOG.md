@@ -1,3 +1,8 @@
+## 3.0.0
+* Updated for Battle for Azeroth.
+* Alerts about the re-added class raid buffs for mages, priests and warriors.
+* Added support for new consumable items.
+
 ## 2.3.0
 * TOC bump for 7.3.0.
 * Added support for the new non-consumable Lightforged Augment Rune.
