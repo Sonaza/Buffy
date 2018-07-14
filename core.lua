@@ -501,7 +501,11 @@ function Addon:GetConsumableCategories()
 	
 	local level = UnitLevel("player");
 	
-	if(level > 100) then
+	if(level > 110) then
+		tinsert(categories, LE.CONSUMABLE_CATEGORY.BFA);
+	end
+	
+	if((level > 100 and level <= 110) or self.db.global.ConsumablesRemind.OutdatedConsumables) then
 		tinsert(categories, LE.CONSUMABLE_CATEGORY.LEGION);
 	end
 	
@@ -593,7 +597,7 @@ function ASDASD(a, b)
 end
 
 function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR)
-	local expansionLevel = expansionLevel or LE.EXPANSION.LEGION;
+	local expansionLevel = expansionLevel or LE.CURRENT_EXPANSION;
 	
 	local includeDungeons = includeDungeons or false;
 	if(includeDungeons == nil) then includeDungeons = false end
@@ -1673,7 +1677,7 @@ function Addon:PlayerInOutdatedInstance()
 		return false;
 	end
 	
-	if(instanceMapID and not LE.INSTANCE_MAP_IDS[LE.EXPANSION.LEGION][instanceMapID]) then
+	if(instanceMapID and not LE.INSTANCE_MAP_IDS[LE.CURRENT_EXPANSION][instanceMapID]) then
 		return true;
 	end
 	
