@@ -516,10 +516,11 @@ end
 
 function Addon:GetConsumableExpansionLevel()
 	local level = UnitLevel("player");
-	if(level > 100) then
+	if(level > 110) then
+		return LE.EXPANSION.BFA;
+	elseif(level > 100) then
 		return LE.EXPANSION.LEGION;
 	end
-	
 	return LE.EXPANSION.DRAENOR;
 end
 
