@@ -585,17 +585,6 @@ function Addon:PlayerHasConsumableBuff(consumable_type, preferredStat)
 	return false, nil, nil, false;
 end
 
-function ASDASD(a, b)
-	a = a or 1100;
-	b = b or 1400;
-	for id = a, b do
-		local mapInfo = C_Map.GetMapInfo(id);
-		if (mapInfo) then
-			print(id, mapInfo.name);
-		end
-	end
-end
-
 function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR)
 	local expansionLevel = expansionLevel or LE.CURRENT_EXPANSION;
 	
