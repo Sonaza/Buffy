@@ -70,6 +70,10 @@ LE.INSTANCE_MAP_IDS = {
 		[1571] = LE.INSTANCETYPE_DUNGEON, -- Court of Stars
 		[1677] = LE.INSTANCETYPE_DUNGEON, -- Cathedral of Eternal Night
 	},
+	
+	[LE.EXPANSION.BFA] = {
+		-- TODO	
+	},
 };
 
 -- Enums
