@@ -368,6 +368,8 @@ local function UnitAuraByNameOrId(unit, aura_name_or_id, filter)
 		if (name == aura_name_or_id or spell_id == aura_name_or_id) then
 			return UnitAura(unit, index, filter);
 		end
+		-- No more buffs to be found
+		if (name == nil) then break end
 	end
 	return nil;
 end
@@ -379,10 +381,10 @@ end
 function Addon:UnitHasBuff(unit, spell)
 	if(not unit or not spell) then return false end
 	
-	local realSpellID = Addon:GetRealSpellID(spell);
-	if(not realSpellID) then return false end
+	local spellName = GetSpellInfo(spell);
+	if(not spellName) then return false end
 	
-	local name, _, _, _, duration, expirationTime, unitCaster = Addon:UnitAura(unit, realSpellID, "HELPFUL");
+	local name, _, _, _, duration, expirationTime, unitCaster = Addon:UnitAura(unit, spellName, "HELPFUL");
 	if(not name) then
 		return false;
 	end
@@ -604,35 +606,35 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 	end
 	
 	-- Hacky area map id fallback
-	 local areaMapIDs = {
-	 	[LE.EXPANSION.BFA] = {
-	 		[1148] = LE.INSTANCETYPE_RAID, -- Uldir
-	 		[1169] = LE.INSTANCETYPE_DUNGEON, -- Tol Dogor
-	 	},
-	 };
-	
-	 if(not areaMapIDs[expansionLevel]) then return false end
-	
-	 local areaMapID = C_Map.GetBestMapForUnit("player");
-	 local hasAreaMapIDMatch = areaMapIDs[expansionLevel][areaMapID] ~= nil;
-	
-	 if(not hasAreaMapIDMatch) then
-	 	local zoneText = GetZoneText();
-		
-	 	for mapID, instanceType in pairs(areaMapIDs) do
-	 		local mapInfo = C_Map.GetMapInfo(mapID);
-	 		if(mapInfo and zoneText == mapInfo.name) then
-	 			areaMapID = mapID;
-	 			hasAreaMapIDMatch = true;
-	 			break;
-	 		end
-	 	end
-	 end
-	
-	 if(hasAreaMapIDMatch) then
-	 	return areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_DUNGEON);
-	 end
-	
+	local areaMapIDs = {
+		[LE.EXPANSION.BFA] = {
+			[1148] = LE.INSTANCETYPE_RAID, -- Uldir
+			[1169] = LE.INSTANCETYPE_DUNGEON, -- Tol Dogor
+		},
+	};
+
+	if(not areaMapIDs[expansionLevel]) then return false end
+
+	local areaMapID = C_Map.GetBestMapForUnit("player");
+	local hasAreaMapIDMatch = areaMapIDs[expansionLevel][areaMapID] ~= nil;
+
+	if(not hasAreaMapIDMatch) then
+		local zoneText = GetZoneText();
+
+		for mapID, instanceType in pairs(areaMapIDs) do
+			local mapInfo = C_Map.GetMapInfo(mapID);
+			if(mapInfo and zoneText == mapInfo.name) then
+				areaMapID = mapID;
+				hasAreaMapIDMatch = true;
+				break;
+			end
+		end
+	end
+
+	if(hasAreaMapIDMatch) then
+		return areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_DUNGEON);
+	end
+
 	return false;
 end
 
@@ -891,7 +893,7 @@ function Addon:GetBuffGroupStatus(spellId)
 	local numUnitsInRange = 0;
 	local buffRemaining = nil;
 	for index, unit in GroupIterator() do
-		if (UnitInRange(unit)) then
+		if (Addon:UnitInRange(unit)) then
 			numUnitsInRange = numUnitsInRange + 1;
 			
 			local hasBuff, isCastByPlayer, unitCaster, remaining, duration = Addon:UnitHasBuff(unit, spellId);
@@ -1362,8 +1364,7 @@ end
 function Addon:GetBuffRemaining(unit, spellID)
 	if(not unit or not spellID) then return 0 end
 	
-	local realSpellID = Addon:GetRealSpellID(spellID);
-	local name, _, _, _, _, expirationTime = Addon:UnitAura(unit, realSpellID, "HELPFUL");
+	local name, _, _, _, _, expirationTime = Addon:UnitAura(unit, spellID, "HELPFUL");
 	if(name) then
 		return expirationTime - GetTime();
 	end
@@ -1420,8 +1421,11 @@ function Addon:GetColorizedUnitName(unit)
 	return string.format("|c%s%s|r", color.colorStr, name);
 end
 
+ASDASD = nil;
 function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 	if(not id) then return end
+	
+	ASDASD = {alert_type, id, data, vars}
 	
 	local doAnimatedSwitch = false;
 	local alertSignature = alert_type .. "@" .. id .. "@" .. (data.target or "notarget");

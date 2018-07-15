@@ -515,12 +515,11 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 		[1]	= {
 			{
-				hasTalent = { 1, 1 },
+				hasTalent = { 1, 3 },
 				bufflist = { LE.BUFFS.MAGE_ARCANE_FAMILIAR, },
 				condition = function()
 					return Addon.db.global.Class.Mage.EnableArcaneFamiliar;
 				end,
-				-- description = "Missing",
 			},
 		},
 	},
