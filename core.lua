@@ -133,7 +133,7 @@ function Addon:IsPlayerEating()
 	};
 	
 	for _, localizedFood in ipairs(localizedFoods) do
-		local name, _, icon, _, _, duration, expirationTime, _, _, _, spellId = UnitBuff("player", localizedFood);
+		local name, _, icon, _, duration, expirationTime, _, _, _, spellId = UnitAuraByNameOrId("player", localizedFood);
 		
 		if(name) then
 			return true, duration - (expirationTime - GetTime()), spellId;
@@ -146,7 +146,7 @@ end
 function Addon:IsPlayerWellFed()
 	-- Find localized name for the food buff, there are too many buff ids to manually check
 	local localizedFood = GetSpellInfo(180748);
-	local name, _, icon, _, _, _, expirationTime, _, _, _, spellId = UnitBuff("player", localizedFood);
+	local name, _, icon, _, _, expirationTime, _, _, _, spellId = UnitAuraByNameOrId("player", localizedFood);
 	
 	if(name) then
 		return true, Addon:WillBuffExpireSoon(expirationTime - GetTime()), spellId;

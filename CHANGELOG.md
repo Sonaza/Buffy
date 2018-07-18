@@ -1,3 +1,6 @@
+## 3.0.1
+* Fixed error in food buff detection.
+
 ## 3.0.0
 * Updated for Battle for Azeroth.
 * Alerts about the re-added class raid buffs for mages, priests and warriors.
