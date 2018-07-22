@@ -133,7 +133,7 @@ function Addon:IsPlayerEating()
 	};
 	
 	for _, localizedFood in ipairs(localizedFoods) do
-		local name, _, icon, _, duration, expirationTime, _, _, _, spellId = UnitAuraByNameOrId("player", localizedFood);
+		local name, _, icon, _, duration, expirationTime, _, _, _, spellId = Addon:UnitAuraByNameOrId("player", localizedFood);
 		
 		if(name) then
 			return true, duration - (expirationTime - GetTime()), spellId;
@@ -146,7 +146,7 @@ end
 function Addon:IsPlayerWellFed()
 	-- Find localized name for the food buff, there are too many buff ids to manually check
 	local localizedFood = GetSpellInfo(180748);
-	local name, _, icon, _, _, expirationTime, _, _, _, spellId = UnitAuraByNameOrId("player", localizedFood);
+	local name, _, icon, _, _, expirationTime, _, _, _, spellId = Addon:UnitAuraByNameOrId("player", localizedFood);
 	
 	if(name) then
 		return true, Addon:WillBuffExpireSoon(expirationTime - GetTime()), spellId;
@@ -362,7 +362,7 @@ function Addon:PlayerHasTalent(tier, column)
 	return talentID and selected;
 end
 
-local function UnitAuraByNameOrId(unit, aura_name_or_id, filter)
+function Addon:UnitAuraByNameOrId(unit, aura_name_or_id, filter)
 	for index = 1, 40 do
 		local name, _, _, _, _, _, _, _, _, spell_id = UnitAura(unit, index, filter);
 		if (name == aura_name_or_id or spell_id == aura_name_or_id) then
@@ -375,7 +375,7 @@ local function UnitAuraByNameOrId(unit, aura_name_or_id, filter)
 end
 
 function Addon:UnitAura(unit, spell_name, flags)
-	return UnitAuraByNameOrId(unit, spell_name, flags);
+	return Addon:UnitAuraByNameOrId(unit, spell_name, flags);
 end
 
 function Addon:UnitHasBuff(unit, spell)
@@ -745,12 +745,6 @@ function Addon:COMBAT_LOG_EVENT_UNFILTERED(_)
 			Addon:UpdateBuffs();
 		end
 	end
-end
-
-function Addon:GetPlayerDistanceToPoint(pinstance, px, py)
-	-- local x, y, _, instance = UnitPosition("player");
-	-- return instance == pinstance and (((px - x) ^ 2 + (py - y) ^ 2) ^ 0.5) / 1.098;
-	return -1;
 end
 
 function Addon:IsFeastUp()

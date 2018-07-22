@@ -1,3 +1,6 @@
+## 3.0.2
+* Actually really fixed error in food buff detection.
+
 ## 3.0.1
 * Fixed error in food buff detection.
 
