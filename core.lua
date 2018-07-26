@@ -392,7 +392,20 @@ function Addon:UnitHasBuff(unit, spell)
 	return true, unitCaster == "player", unitCaster, expirationTime - GetTime(), duration;
 end
 
-function Addon:UnitInRange(unit, extended)
+function Addon:GetSpellBookIndexForSpellId(checkSpellId)
+	local numSpells = GetNumSpellTabs() * 12;
+	for spellIndex = 1, numSpells do
+		local skillType, special = GetSpellBookItemInfo(spellIndex, BOOKTYPE_SPELL);
+		if (skillType == "SPELL" and checkSpellId == special) then
+			return spellIndex;
+		elseif (skillType == nil) then
+			break;
+		end
+	end
+	return nil;
+end
+
+function Addon:UnitInRange(unit, checkSpellId)
 	if(not unit) then return false end
 	
 	if(unit == "player") then return not UnitIsDeadOrGhost(unit) end
@@ -401,18 +414,16 @@ function Addon:UnitInRange(unit, extended)
 		return false;
 	end
 	
-	local rangeThreshold = 900; -- Roughly 30yd radius
-	if(extended) then
-		rangeThreshold = 10000; -- Roughly 100yd radius
+	if (checkSpellId) then
+		local skillIndex = Addon:GetSpellBookIndexForSpellId(checkSpellId);
+		if (skillIndex) then
+			local spellInRange = IsSpellInRange(skillIndex, BOOKTYPE_SPELL, unit);
+			if (spellInRange ~= nil) then return spellInRange end
+		end
 	end
 	
-	local unitInRange = nil;
-	local distance, distanceChecked = UnitDistanceSquared(unit);
-	if(distanceChecked) then
-		unitInRange = distance <= rangeThreshold;
-	end
-	
-	return unitInRange;
+	local isInRange, distanceChecked = UnitInRange(unit);
+	return distanceChecked and isInRange;
 end
 
 local partyUnitID = { "player", "party1", "party2", "party3", "party4" };
@@ -886,8 +897,9 @@ function Addon:GetBuffGroupStatus(spellId)
 	local numUnitsAreMissingBuff = 0;
 	local numUnitsInRange = 0;
 	local buffRemaining = nil;
+	
 	for index, unit in GroupIterator() do
-		if (Addon:UnitInRange(unit)) then
+		if (Addon:UnitInRange(unit, spellId)) then
 			numUnitsInRange = numUnitsInRange + 1;
 			
 			local hasBuff, isCastByPlayer, unitCaster, remaining, duration = Addon:UnitHasBuff(unit, spellId);
@@ -1479,7 +1491,6 @@ function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 		};
 		
 		if(not InCombatLockdown() and not noCast) then
-			-- print("Temp Binding! 1 /", name, noCast, data.info.type, data.info.id, data.target);
 			Addon:SetTempBind(data.info.type, data.info.id, data.target);
 		end
 		
@@ -1508,7 +1519,6 @@ function Addon:ShowBuffyAlert(alert_type, id, data, vars)
 			id = id,
 		};
 		
-		-- print("Temp Binding! 2", data.info.type, data.info.id, data.target);
 		if(not InCombatLockdown() and self.db.global.ConsumablesRemind.KeybindEnabled and not noCast) then
 			Addon:SetTempBind("item", name, data.target);
 		end

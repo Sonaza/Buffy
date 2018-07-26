@@ -1,3 +1,6 @@
+## 3.0.3
+* Fixed a really old range check bug that was preventing proper buff check in dungeons and raids.
+
 ## 3.0.2
 * Actually really fixed error in food buff detection.
 
