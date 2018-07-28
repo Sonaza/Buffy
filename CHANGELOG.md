@@ -1,3 +1,6 @@
+## 3.0.4
+* Fixed nil error.
+
 ## 3.0.3
 * Fixed a really old range check bug that was preventing proper buff check in dungeons and raids.
 

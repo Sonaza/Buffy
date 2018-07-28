@@ -489,6 +489,10 @@ function Addon:GetNumPartyMembers()
 end
 
 function Addon:UnitHasSomeBuff(unit, bufflist, checkKnownSpell)
+	if (not bufflist) then
+		return false;
+	end
+	
 	for _, buff in ipairs(bufflist) do
 		if(IsSpellKnown(buff) or not checkKnownSpell) then
 			local hasBuff, isCastByPlayer, caster, remaining, duration = Addon:UnitHasBuff(unit, buff);
