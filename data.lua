@@ -147,6 +147,8 @@ Addon:AddBuffSpell(196099,	LE.BUFF_SPECIAL, "WARLOCK_GRIMOIRE_OF_SACRIFICE_EFFEC
 
 Addon:AddBuffSpell(205022,	LE.BUFF_SPECIAL, "MAGE_ARCANE_FAMILIAR");
 
+Addon:AddBuffSpell(192106,	LE.BUFF_SPECIAL, "SHAMAN_LIGHTNING_SHIELD");
+
 Addon:AddBuffSpell(5487,	LE.BUFF_SPECIAL, "DRUID_BEAR_FORM");
 Addon:AddBuffSpell(768,		LE.BUFF_SPECIAL, "DRUID_CAT_FORM");
 Addon:AddBuffSpell(24858,	LE.BUFF_SPECIAL, "DRUID_MOONKIN_FORM");
@@ -360,7 +362,15 @@ local CLASS_CASTABLE_BUFFS = {
 		},
 	},
 	["SHAMAN"] = {
-		
+		[2]	= {
+			{
+				hasTalent = { 1, 3 },
+				bufflist = { LE.BUFFS.SHAMAN_LIGHTNING_SHIELD, },
+				condition = function()
+					return Addon.db.global.Class.Shaman.EnableLightningShield;
+				end,
+			},
+		},
 	},
 	["DRUID"] = {
 		[1] = {

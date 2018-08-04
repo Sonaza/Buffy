@@ -124,6 +124,9 @@ function Addon:InitializeDatabase()
 				Mage = {
 					EnableArcaneFamiliar = true,	
 				},
+				Shaman = {
+					EnableLightningShield = true,	
+				},
 				Rogue = {
 					EnableLethal = true,
 					EnableNonlethal = true,
@@ -299,6 +302,22 @@ function Addon:GetClassOptions()
 					text = "Don't suggest buff spell or targets (only remind)",
 					func = function() Addon.db.global.Class.Paladin.OnlyRemind = not Addon.db.global.Class.Paladin.OnlyRemind; Addon:UpdateBuffs(); end,
 					checked = function() return Addon.db.global.Class.Paladin.OnlyRemind; end,
+					isNotRadio = true,
+				},
+			},
+		},
+		["SHAMAN"]	= {
+			text = "Shaman Options",
+			hasArrow = true,
+			notCheckable = true,
+			menuList = {
+				{
+					text = "Shaman Options", isTitle = true, notCheckable = true,
+				},
+				{
+					text = "Remind about Lightning Shield",
+					func = function() Addon.db.global.Class.Shaman.EnableLightningShield = not Addon.db.global.Class.Shaman.EnableLightningShield; Addon:UpdateBuffs(); end,
+					checked = function() return Addon.db.global.Class.Shaman.EnableLightningShield; end,
 					isNotRadio = true,
 				},
 			},

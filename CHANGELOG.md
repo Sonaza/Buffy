@@ -1,3 +1,6 @@
+## 3.0.5
+* Added reminder for Shaman Lightning Shield talent.
+
 ## 3.0.4
 * Fixed nil error.
 
