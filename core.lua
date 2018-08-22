@@ -621,34 +621,34 @@ function Addon:PlayerInValidInstance(expansionLevel, includeDungeons, includeLFR
 	end
 	
 	-- Hacky area map id fallback
-	local areaMapIDs = {
-		[LE.EXPANSION.BFA] = {
-			[1148] = LE.INSTANCETYPE_RAID, -- Uldir
-			[1169] = LE.INSTANCETYPE_DUNGEON, -- Tol Dogor
-		},
-	};
+	--local areaMapIDs = {
+	--	[LE.EXPANSION.BFA] = {
+	--		[1148] = LE.INSTANCETYPE_RAID, -- Uldir
+	--		[1169] = LE.INSTANCETYPE_DUNGEON, -- Tol Dogor
+	--	},
+	--};
 
-	if(not areaMapIDs[expansionLevel]) then return false end
+	--if(not areaMapIDs[expansionLevel]) then return false end
 
-	local areaMapID = C_Map.GetBestMapForUnit("player");
-	local hasAreaMapIDMatch = areaMapIDs[expansionLevel][areaMapID] ~= nil;
+	--local areaMapID = C_Map.GetBestMapForUnit("player");
+	--local hasAreaMapIDMatch = areaMapIDs[expansionLevel][areaMapID] ~= nil;
 
-	if(not hasAreaMapIDMatch) then
-		local zoneText = GetZoneText();
+	--if(not hasAreaMapIDMatch) then
+	--	local zoneText = GetZoneText();
 
-		for mapID, instanceType in pairs(areaMapIDs) do
-			local mapInfo = C_Map.GetMapInfo(mapID);
-			if(mapInfo and zoneText == mapInfo.name) then
-				areaMapID = mapID;
-				hasAreaMapIDMatch = true;
-				break;
-			end
-		end
-	end
+	--	for mapID, instanceType in pairs(areaMapIDs) do
+	--		local mapInfo = C_Map.GetMapInfo(mapID);
+	--		if(mapInfo and zoneText == mapInfo.name) then
+	--			areaMapID = mapID;
+	--			hasAreaMapIDMatch = true;
+	--			break;
+	--		end
+	--	end
+	--end
 
-	if(hasAreaMapIDMatch) then
-		return areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_DUNGEON);
-	end
+	--if(hasAreaMapIDMatch) then
+	--	return areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_RAID or (includeDungeons and areaMapIDs[expansionLevel][areaMapID] == LE.INSTANCETYPE_DUNGEON);
+	--end
 
 	return false;
 end

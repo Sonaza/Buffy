@@ -72,7 +72,18 @@ LE.INSTANCE_MAP_IDS = {
 	},
 	
 	[LE.EXPANSION.BFA] = {
-		-- TODO	
+		[1861] = LE.INSTANCETYPE_RAID, -- Uldir
+		
+		[1763] = LE.INSTANCETYPE_DUNGEON, -- Atal'Dazar
+		[1754] = LE.INSTANCETYPE_DUNGEON, -- Freehold
+		[1762] = LE.INSTANCETYPE_DUNGEON, -- Kings Rest
+		[1864] = LE.INSTANCETYPE_DUNGEON, -- Shrine of the Storm
+		[1822] = LE.INSTANCETYPE_DUNGEON, -- Siege of Boralus
+		[1877] = LE.INSTANCETYPE_DUNGEON, -- Temple of Sethraliss
+		[1594] = LE.INSTANCETYPE_DUNGEON, -- The Motherlode
+		[1841] = LE.INSTANCETYPE_DUNGEON, -- The Underrot
+		[1771] = LE.INSTANCETYPE_DUNGEON, -- Tol Dagor
+		[1862] = LE.INSTANCETYPE_DUNGEON, -- Waycrest Manor
 	},
 };
 
@@ -157,6 +168,7 @@ Addon:AddBuffSpell(203538,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_KINGS")
 Addon:AddBuffSpell(203539,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_WISDOM");
 
 Addon:AddBuffSpell(181943,	LE.BUFF_SPECIAL, "PEPE");
+Addon:AddBuffSpell(279997,	LE.BUFF_SPECIAL, "HEARTSBANE_CURSE");
 
 Addon:AddBuffSpell(6673, 	LE.STAT.STRENGTH + LE.STAT.AGILITY, "BATTLE_SHOUT");
 Addon:AddBuffSpell(21562,	LE.STAT.STAMINA, "POWER_WORD_FORTITUDE");
@@ -612,6 +624,7 @@ function Addon:GetClassCastableBuffs(class, spec)
 end
 
 local PEPE_TOY_ITEM_ID = 122293;
+local HEARTSBANE_GRIMOIRE_TOY_ITEM_ID = 163742;
 
 -- Miscellaneous category, low priority selfbuffs or other stuff
 LE.MISC_CASTABLE_BUFFS = {
@@ -647,6 +660,33 @@ LE.MISC_CASTABLE_BUFFS = {
 		info = {
 			type = "toy",
 			id = PEPE_TOY_ITEM_ID,
+		},
+	},
+	{
+		bufflist = { LE.BUFFS.HEARTSBANE_CURSE },
+		skipBuffCheck = true,
+		condition = function()
+			if(not Addon.db.global.WitchCurseReminderEnabled or InCombatLockdown()) then return false end
+			if(not PlayerHasToy(HEARTSBANE_GRIMOIRE_TOY_ITEM_ID)) then return false end
+			
+			local inInstance, instanceType = Addon:PlayerInInstance();
+			if(inInstance and (instanceType == "pvp" or instanceType == "arena")) then return false end
+			
+			local hasBuff = Addon:UnitHasBuff("player", LE.BUFFS.HEARTSBANE_CURSE);
+			if(hasBuff) then return false end
+			
+			local start, duration, enable = GetItemCooldown(HEARTSBANE_GRIMOIRE_TOY_ITEM_ID);
+			return start == 0 and duration == 0;
+		end,
+		description = function()
+			local quotes = {
+				"I've got 99 problems, all of them witches",
+			};
+			return quotes[math.floor(GetTime() / 120) % (#quotes) + 1];
+		end,
+		info = {
+			type = "toy",
+			id = HEARTSBANE_GRIMOIRE_TOY_ITEM_ID,
 		},
 	},
 }

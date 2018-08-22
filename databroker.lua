@@ -82,6 +82,7 @@ function Addon:InitializeDatabase()
 			UnbindWhenMoving = false,
 			
 			PepeReminderEnabled = false,
+			WitchCurseReminderEnabled = false,
 			
 			Position = {
 				DefaultPosition = true,
@@ -218,24 +219,6 @@ function Addon:GetClassOptions()
 					checked = function() return Addon.db.global.Class.Rogue.EnableFindTreasure; end,
 					isNotRadio = true,
 				},
-				-- {
-				-- 	text = " ", isTitle = true, notCheckable = true,
-				-- },
-				-- {
-				-- 	text = "Class Hall Buffs", isTitle = true, notCheckable = true,
-				-- },
-				-- {
-				-- 	text = "Remind to use Pack of Battle Potions",
-				-- 	func = function() Addon.db.global.Class.Rogue.EnablePotionPack = not Addon.db.global.Class.Rogue.EnablePotionPack; Addon:UpdateBuffs(); end,
-				-- 	checked = function() return Addon.db.global.Class.Rogue.EnablePotionPack; end,
-				-- 	isNotRadio = true,
-				-- },
-				-- {
-				-- 	text = "Remind to use Smoky Boots",
-				-- 	func = function() Addon.db.global.Class.Rogue.EnableSmokyBoots = not Addon.db.global.Class.Rogue.EnableSmokyBoots; Addon:UpdateBuffs(); end,
-				-- 	checked = function() return Addon.db.global.Class.Rogue.EnableSmokyBoots; end,
-				-- 	isNotRadio = true,
-				-- },
 			},
 		},
 		["WARLOCK"] = {
@@ -695,6 +678,12 @@ function Addon:GetDatabrokerMenuData()
 					text = "Remind to use Trans-Dimensional Bird Whistle",
 					func = function() self.db.global.PepeReminderEnabled = not self.db.global.PepeReminderEnabled; Addon:UpdateBuffs(); end,
 					checked = function() return self.db.global.PepeReminderEnabled; end,
+					isNotRadio = true,
+				},
+				{
+					text = "Remind to use Heartsbane Grimoire",
+					func = function() self.db.global.WitchCurseReminderEnabled = not self.db.global.WitchCurseReminderEnabled; Addon:UpdateBuffs(); end,
+					checked = function() return self.db.global.WitchCurseReminderEnabled; end,
 					isNotRadio = true,
 				},
 			},
