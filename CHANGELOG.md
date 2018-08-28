@@ -1,3 +1,6 @@
+## 3.0.7
+* Added Shadowform reminder for shadow priests.
+
 ## 3.0.6
 * Updated instance ids so current dungeon/raid detection works.
 * Added optional reminder for Heartsbane Grimoire toy.

@@ -164,6 +164,8 @@ Addon:AddBuffSpell(5487,	LE.BUFF_SPECIAL, "DRUID_BEAR_FORM");
 Addon:AddBuffSpell(768,		LE.BUFF_SPECIAL, "DRUID_CAT_FORM");
 Addon:AddBuffSpell(24858,	LE.BUFF_SPECIAL, "DRUID_MOONKIN_FORM");
 
+Addon:AddBuffSpell(232698,	LE.BUFF_SPECIAL, "PRIEST_SHADOWFORM");
+
 Addon:AddBuffSpell(203538,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_KINGS");
 Addon:AddBuffSpell(203539,	LE.BUFF_SPECIAL, "PALADIN_GREATER_BLESSING_OF_WISDOM");
 
@@ -371,6 +373,14 @@ local CLASS_CASTABLE_BUFFS = {
 			{
 				raidbuff = LE.BUFFS.POWER_WORD_FORTITUDE,
 			}
+		},
+		[3] = {
+			{
+				bufflist = { LE.BUFFS.PRIEST_SHADOWFORM },
+				condition = function()
+					return Addon.db.global.Class.Priest.ShadowformAlert and (not Addon.db.global.Class.Priest.OnlyInCombat or InCombatLockdown());
+				end,
+			},
 		},
 	},
 	["SHAMAN"] = {

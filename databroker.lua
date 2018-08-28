@@ -154,6 +154,10 @@ function Addon:InitializeDatabase()
 					FormAlert = true,
 					OnlyInCombat = true,
 				},
+				Priest = {
+					ShadowformAlert = true,
+					OnlyInCombat = false,
+				},
 			},
 		},
 	};
@@ -336,9 +340,31 @@ function Addon:GetClassOptions()
 					isNotRadio = true,
 				},
 				{
-					text = "Only alert in combat",
+					text = "Only alert about forms in combat",
 					func = function() Addon.db.global.Class.Druid.OnlyInCombat = not Addon.db.global.Class.Druid.OnlyInCombat; Addon:UpdateBuffs(); end,
 					checked = function() return Addon.db.global.Class.Druid.OnlyInCombat; end,
+					isNotRadio = true,
+				},
+			},
+		},
+		["PRIEST"]	= {
+			text = "Priest Options",
+			hasArrow = true,
+			notCheckable = true,
+			menuList = {
+				{
+					text = "Priest Options", isTitle = true, notCheckable = true,
+				},
+				{
+					text = "Alert if not in shadowform",
+					func = function() Addon.db.global.Class.Priest.ShadowformAlert = not Addon.db.global.Class.Priest.ShadowformAlert; Addon:UpdateBuffs(); end,
+					checked = function() return Addon.db.global.Class.Priest.ShadowformAlert; end,
+					isNotRadio = true,
+				},
+				{
+					text = "Only alert about Shadowform in combat",
+					func = function() Addon.db.global.Class.Priest.OnlyInCombat = not Addon.db.global.Class.Priest.OnlyInCombat; Addon:UpdateBuffs(); end,
+					checked = function() return Addon.db.global.Class.Priest.OnlyInCombat; end,
 					isNotRadio = true,
 				},
 			},
