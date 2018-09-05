@@ -1,4 +1,7 @@
 ## 3.0.7
+* Fixed flask buff spell ids, Buffy shouldn't remind to use a flask if one is already active.
+
+## 3.0.7
 * Added Shadowform reminder for shadow priests.
 
 ## 3.0.6

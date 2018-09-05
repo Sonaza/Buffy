@@ -796,16 +796,16 @@ Addon:AddBuffItems(BUFFY_CONSUMABLES.FOODS, LE.CONSUMABLE_CATEGORY.LEGION, LE.ST
 -- BFA consumables
 
 Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.AGILITY, 		{ 162518, 152638, });
-Addon:AddItemSpell(127848, 188033); -- Flask of the Seventh Demon
+Addon:AddItemSpell(152638, 251836); -- Flask of the Currents
 
 Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.STRENGTH,		{ 162518, 152641, });
-Addon:AddItemSpell(127849, 188034); -- Flask of the Countless Armies
+Addon:AddItemSpell(152641, 251839); -- Flask of the Undertow
 
 Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.INTELLECT, 	{ 162518, 152639, });
-Addon:AddItemSpell(127847, 188031); -- Flask of the Whispered Pact
+Addon:AddItemSpell(152639, 251837); -- Flask of Endless Fathoms
 
 Addon:AddBuffItems(BUFFY_CONSUMABLES.FLASKS, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.STAMINA, 		{ 162518, 152640, });
-Addon:AddItemSpell(127850, 188035); -- Flask of Ten Thousand Scars
+Addon:AddItemSpell(152640, 251838); -- Flask of the Vast Horizon
 
 -- Non-consumable rune is listed first
 Addon:AddBuffItems(BUFFY_CONSUMABLES.RUNES, LE.CONSUMABLE_CATEGORY.BFA, LE.STAT.AGILITY, 		{ 153023, });
