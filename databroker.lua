@@ -735,7 +735,7 @@ function Addon:GetDatabrokerMenuData()
 					func = function() self.db.global.ConsumablesRemind.Mode = LE.RAID_CONSUMABLES.RAIDS_ONLY; Addon:UpdateBuffs(); CloseMenus(); end,
 					checked = function() return self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.RAIDS_ONLY; end,
 					tooltipTitle = "Enable in current raids",
-					tooltipText = "Consumable alerts will be enabled in current content according to your level.|n|nNote: only Legion and Draenor consumables are supported.",
+					tooltipText = "Consumable alerts will be enabled in current content according to your level.|n|nNote: only consumables from Draenor onwards are supported.",
 					tooltipOnButton = 1,
 				},
 				{
@@ -743,7 +743,7 @@ function Addon:GetDatabrokerMenuData()
 					func = function() self.db.global.ConsumablesRemind.Mode = LE.RAID_CONSUMABLES.RAIDS_AND_DUNGEONS; Addon:UpdateBuffs(); CloseMenus(); end,
 					checked = function() return self.db.global.ConsumablesRemind.Mode == LE.RAID_CONSUMABLES.RAIDS_AND_DUNGEONS; end,
 					tooltipTitle = "Enable in current raids and dungeons",
-					tooltipText = "Consumable alerts will be enabled in current content according to your level.|n|nNote: only Legion and Draenor consumables are supported.",
+					tooltipText = "Consumable alerts will be enabled in current content according to your level.|n|nNote: only consumables from Draenor onwards are supported.",
 					tooltipOnButton = 1,
 				},
 				{

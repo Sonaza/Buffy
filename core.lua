@@ -772,7 +772,10 @@ end
 
 Addon.LastBuffsUpdate = 0;
 function Addon:ShouldDoUpdate()
-	return not InCombatLockdown() or debugprofilestop() >= Addon.LastBuffsUpdate + 950;
+	if (InCombatLockdown()) then
+		return debugprofilestop() >= Addon.LastBuffsUpdate + 950;
+	end
+	return debugprofilestop() >= Addon.LastBuffsUpdate + 240;
 end
 
 LE.BUFF_STATE = {
@@ -1161,7 +1164,7 @@ function Addon:UpdateBuffs(forceUpdate)
 			if(self.db.global.ConsumablesRemind.Runes and PLAYER_LEVEL >= 100) then
 				local checkForRunes = true;
 				
-				if(PLAYER_LEVEL == 110 and self.db.global.ConsumablesRemind.OnlyInfiniteRune and GetItemCount(153023) == 0) then
+				if(PLAYER_LEVEL == 120 and self.db.global.ConsumablesRemind.OnlyInfiniteRune) then  --and GetItemCount(153023) == 0
 					checkForRunes = false;
 				end
 				

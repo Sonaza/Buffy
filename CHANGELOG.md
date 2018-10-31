@@ -1,4 +1,9 @@
-## 3.0.7
+## 3.0.9
+* Fixed consumables tooltip wording to clarify which expansion consumables are supported.
+* Fixed augment rune alerts, turns out I forgot to add the new runes to the data list. Oops.
+* Reduced out of combat update frequency to decrease lag caused to the game with buff updates being limited to up to 4 times per second.
+
+## 3.0.8
 * Fixed flask buff spell ids, Buffy shouldn't remind to use a flask if one is already active.
 
 ## 3.0.7
