@@ -773,9 +773,9 @@ end
 Addon.LastBuffsUpdate = 0;
 function Addon:ShouldDoUpdate()
 	if (InCombatLockdown()) then
-		return debugprofilestop() >= Addon.LastBuffsUpdate + 950;
+		return debugprofilestop() >= Addon.LastBuffsUpdate + 1000;
 	end
-	return debugprofilestop() >= Addon.LastBuffsUpdate + 240;
+	return debugprofilestop() >= Addon.LastBuffsUpdate + 500;
 end
 
 LE.BUFF_STATE = {

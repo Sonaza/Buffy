@@ -1,3 +1,7 @@
+## 3.1.0
+* Added reminders for the new consumables added in patch 8.1.0.
+* Reduced out of combat update frequency even further to decrease lag.
+
 ## 3.0.9
 * Fixed consumables tooltip wording to clarify which expansion consumables are supported.
 * Fixed augment rune alerts, turns out I forgot to add the new runes to the data list. Oops.
