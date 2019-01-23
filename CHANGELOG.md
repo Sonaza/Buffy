@@ -1,3 +1,6 @@
+## 3.1.1
+* Added Battle of Dazar'alor to current raid list.
+
 ## 3.1.0
 * Added reminders for the new consumables added in patch 8.1.0.
 * Reduced out of combat update frequency even further to decrease lag.
