@@ -1,3 +1,6 @@
+## 3.1.2
+* Added Crucible of Storms to current raid list.
+
 ## 3.1.1
 * Added Battle of Dazar'alor to current raid list.
 

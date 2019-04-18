@@ -74,6 +74,7 @@ LE.INSTANCE_MAP_IDS = {
 	[LE.EXPANSION.BFA] = {
 		[1861] = LE.INSTANCETYPE_RAID, -- Uldir
 		[2070] = LE.INSTANCETYPE_RAID, -- Dazar'alor
+		[2096] = LE.INSTANCETYPE_RAID, -- Crucible of Storms
 		
 		[1763] = LE.INSTANCETYPE_DUNGEON, -- Atal'Dazar
 		[1754] = LE.INSTANCETYPE_DUNGEON, -- Freehold
