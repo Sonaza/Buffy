@@ -1,3 +1,6 @@
+## 3.2.0
+* Updated for patch 8.2.0: Added the new consumables and dungeons to the data.
+
 ## 3.1.2
 * Added Crucible of Storms to current raid list.
 
