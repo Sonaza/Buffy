@@ -1,5 +1,7 @@
 ------------------------------------------------------------
--- Buffy by Sonaza
+-- Buffy by Sonaza (https://sonaza.com)
+-- Licensed under MIT License
+-- See attached license text in file LICENSE
 ------------------------------------------------------------
 
 local ADDON_NAME, Addon = ...;

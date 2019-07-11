@@ -1,9 +1,8 @@
 ------------------------------------------------------------
--- Buffy by Sonaza
--- All rights reserved
--- http://sonaza.com
+-- Buffy by Sonaza (https://sonaza.com)
+-- Licensed under MIT License
+-- See attached license text in file LICENSE
 ------------------------------------------------------------
-
 
 local ADDON_NAME = ...;
 local Addon = LibStub("AceAddon-3.0"):NewAddon(select(2, ...), ADDON_NAME, "AceEvent-3.0");

@@ -14,5 +14,8 @@ You can also set a quick cast keybind via the options menu. The keybind will onl
 ## Dependencies
 Buffy uses Ace3 and LibDataBroker which are included in the /libs directory.
 
+## License
+Buffy is licensed under MIT license. See license terms in file LICENSE.
+
 ## External links
 * [Download available on Curse](http://www.curse.com/addons/wow/buffy)
